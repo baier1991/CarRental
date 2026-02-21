@@ -22,6 +22,15 @@ Open:
 - `http://localhost:3000` for the dashboard
 - `http://localhost:3000/api/health` for API health check
 
+## One-click cloud deploy (open on mobile)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/baier1991/CarRental)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/baier1991/CarRental)
+
+After clicking, choose branch: `cursor/car-rental-product-1caa`.
+
+Detailed steps: [`docs/deployment.md`](docs/deployment.md)
+
 ## Available scripts
 
 - `npm run start` - start server
@@ -34,12 +43,16 @@ Open:
 .
 ├── data/
 │   └── store.json
+├── Dockerfile
 ├── docs/
+│   ├── deployment.md
 │   └── product-blueprint.md
 ├── public/
 │   ├── app.js
 │   ├── index.html
 │   └── styles.css
+├── railway.json
+├── render.yaml
 ├── src/
 │   ├── data/
 │   │   └── store.js
