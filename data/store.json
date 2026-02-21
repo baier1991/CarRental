@@ -1,0 +1,104 @@
+{
+  "vehicles": [
+    {
+      "id": "veh-001",
+      "plateNumber": "DXB-1024",
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2024,
+      "dailyRate": 55,
+      "status": "available",
+      "location": "Dubai Downtown",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "createdAt": "2026-01-08T10:00:00.000Z",
+      "updatedAt": "2026-01-08T10:00:00.000Z"
+    },
+    {
+      "id": "veh-002",
+      "plateNumber": "DXB-7761",
+      "make": "Hyundai",
+      "model": "Creta",
+      "year": 2025,
+      "dailyRate": 74,
+      "status": "available",
+      "location": "Dubai Marina",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "createdAt": "2026-01-10T10:00:00.000Z",
+      "updatedAt": "2026-01-10T10:00:00.000Z"
+    },
+    {
+      "id": "veh-003",
+      "plateNumber": "AUH-4412",
+      "make": "Tesla",
+      "model": "Model 3",
+      "year": 2025,
+      "dailyRate": 149,
+      "status": "maintenance",
+      "location": "Abu Dhabi Airport",
+      "transmission": "Automatic",
+      "fuelType": "Electric",
+      "createdAt": "2026-01-12T10:00:00.000Z",
+      "updatedAt": "2026-02-01T08:30:00.000Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cus-001",
+      "firstName": "Nora",
+      "lastName": "Hassan",
+      "email": "nora.hassan@example.com",
+      "phone": "+971501112233",
+      "licenseNumber": "UAE93847",
+      "createdAt": "2026-01-05T09:00:00.000Z",
+      "updatedAt": "2026-01-05T09:00:00.000Z"
+    },
+    {
+      "id": "cus-002",
+      "firstName": "Daniel",
+      "lastName": "Smith",
+      "email": "daniel.smith@example.com",
+      "phone": "+971502224455",
+      "licenseNumber": "UKA12876",
+      "createdAt": "2026-01-07T09:00:00.000Z",
+      "updatedAt": "2026-01-07T09:00:00.000Z"
+    }
+  ],
+  "reservations": [
+    {
+      "id": "res-001",
+      "customerId": "cus-001",
+      "vehicleId": "veh-002",
+      "startDate": "2026-03-03",
+      "endDate": "2026-03-08",
+      "status": "confirmed",
+      "insuranceTier": "plus",
+      "addOns": [
+        "gps"
+      ],
+      "discountCode": null,
+      "notes": "Airport pickup requested",
+      "rentalDays": 5,
+      "pricing": {
+        "dailyRate": 74,
+        "basePrice": 370,
+        "insuranceTier": "plus",
+        "insurancePrice": 90,
+        "addOns": [
+          "gps"
+        ],
+        "addOnPrice": 45,
+        "subtotal": 505,
+        "discountCode": null,
+        "discountAmount": 0,
+        "discountedSubtotal": 505,
+        "taxRate": 0.12,
+        "tax": 60.6,
+        "total": 565.6
+      },
+      "createdAt": "2026-02-10T07:00:00.000Z",
+      "updatedAt": "2026-02-10T07:00:00.000Z"
+    }
+  ]
+}

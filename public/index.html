@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Rental OS</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="container">
+      <h1>Car Rental OS</h1>
+      <p class="subtitle">
+        WheelSys-style platform starter for rental companies: fleet, reservations, pricing, and customer
+        operations.
+      </p>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h2>Dashboard</h2>
+        <div id="dashboard-metrics" class="metrics-grid"></div>
+      </section>
+
+      <section class="grid-2">
+        <article class="card">
+          <h2>Add Vehicle</h2>
+          <form id="vehicle-form" class="stack">
+            <div class="grid-2">
+              <label>
+                Plate Number
+                <input name="plateNumber" required />
+              </label>
+              <label>
+                Year
+                <input type="number" name="year" min="1990" max="2100" required />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Make
+                <input name="make" required />
+              </label>
+              <label>
+                Model
+                <input name="model" required />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Daily Rate
+                <input type="number" name="dailyRate" step="0.01" required />
+              </label>
+              <label>
+                Status
+                <select name="status">
+                  <option value="available">available</option>
+                  <option value="maintenance">maintenance</option>
+                  <option value="inactive">inactive</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Location
+                <input name="location" required />
+              </label>
+              <label>
+                Fuel Type
+                <input name="fuelType" />
+              </label>
+            </div>
+            <label>
+              Transmission
+              <input name="transmission" />
+            </label>
+            <button type="submit">Add Vehicle</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>Add Customer</h2>
+          <form id="customer-form" class="stack">
+            <div class="grid-2">
+              <label>
+                First Name
+                <input name="firstName" required />
+              </label>
+              <label>
+                Last Name
+                <input name="lastName" required />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Email
+                <input type="email" name="email" required />
+              </label>
+              <label>
+                Phone
+                <input name="phone" required />
+              </label>
+            </div>
+            <label>
+              License Number
+              <input name="licenseNumber" required />
+            </label>
+            <button type="submit">Add Customer</button>
+          </form>
+        </article>
+      </section>
+
+      <section class="grid-2">
+        <article class="card">
+          <h2>Create Reservation</h2>
+          <form id="reservation-form" class="stack">
+            <label>
+              Customer
+              <select name="customerId" id="reservation-customer" required></select>
+            </label>
+            <label>
+              Vehicle
+              <select name="vehicleId" id="reservation-vehicle" required></select>
+            </label>
+            <div class="grid-2">
+              <label>
+                Start Date
+                <input type="date" name="startDate" required />
+              </label>
+              <label>
+                End Date
+                <input type="date" name="endDate" required />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Insurance
+                <select name="insuranceTier">
+                  <option value="basic">basic</option>
+                  <option value="plus">plus</option>
+                  <option value="premium">premium</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select name="status">
+                  <option value="pending">pending</option>
+                  <option value="confirmed">confirmed</option>
+                  <option value="active">active</option>
+                </select>
+              </label>
+            </div>
+            <fieldset>
+              <legend>Add-ons</legend>
+              <label><input type="checkbox" name="addOns" value="gps" /> GPS</label>
+              <label><input type="checkbox" name="addOns" value="childSeat" /> Child Seat</label>
+              <label><input type="checkbox" name="addOns" value="extraDriver" /> Extra Driver</label>
+            </fieldset>
+            <label>
+              Discount Code
+              <input name="discountCode" placeholder="WEEKLY10 or CORPORATE15" />
+            </label>
+            <label>
+              Notes
+              <textarea name="notes" rows="2"></textarea>
+            </label>
+            <button type="submit">Create Reservation</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>Quick Quote</h2>
+          <form id="quote-form" class="stack">
+            <label>
+              Vehicle
+              <select name="vehicleId" id="quote-vehicle"></select>
+            </label>
+            <div class="grid-2">
+              <label>
+                Start Date
+                <input type="date" name="startDate" required />
+              </label>
+              <label>
+                End Date
+                <input type="date" name="endDate" required />
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Insurance
+                <select name="insuranceTier">
+                  <option value="basic">basic</option>
+                  <option value="plus">plus</option>
+                  <option value="premium">premium</option>
+                </select>
+              </label>
+              <label>
+                Discount Code
+                <input name="discountCode" placeholder="Optional" />
+              </label>
+            </div>
+            <fieldset>
+              <legend>Add-ons</legend>
+              <label><input type="checkbox" name="addOns" value="gps" /> GPS</label>
+              <label><input type="checkbox" name="addOns" value="childSeat" /> Child Seat</label>
+              <label><input type="checkbox" name="addOns" value="extraDriver" /> Extra Driver</label>
+            </fieldset>
+            <button type="submit">Calculate Quote</button>
+          </form>
+          <div id="quote-result" class="quote-result"></div>
+        </article>
+      </section>
+
+      <section class="grid-2">
+        <article class="card">
+          <h2>Vehicles</h2>
+          <div id="vehicle-list" class="table-wrap"></div>
+        </article>
+        <article class="card">
+          <h2>Customers</h2>
+          <div id="customer-list" class="table-wrap"></div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Reservations</h2>
+        <div id="reservation-list" class="table-wrap"></div>
+      </section>
+
+      <div id="toast" class="toast hidden" aria-live="polite"></div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
