@@ -11,20 +11,12 @@
       <aside class="sidebar">
         <a class="sidebar-brand" href="/">Car Rental OS</a>
         <p class="sidebar-subtitle">Rental operations platform</p>
-        <label class="role-label">
-          Signed in as
-          <select id="role-select">
-            <option value="admin">Admin</option>
-            <option value="operations">Operations</option>
-            <option value="agent">Rental Agent</option>
-          </select>
-        </label>
         <nav class="sidebar-menu">
-          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
-          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations,agent">Fleet</a>
-          <a href="/customers.html" data-page="customers" data-roles="admin,operations,agent">Customers</a>
-          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
-          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+          <a href="/" data-page="home">Home</a>
+          <a href="/fleet.html" data-page="fleet">Fleet</a>
+          <a href="/customers.html" data-page="customers">Customers</a>
+          <a href="/reservations.html" data-page="reservations">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance">Maintenance</a>
         </nav>
       </aside>
 
@@ -35,7 +27,7 @@
         </header>
 
         <main class="container">
-          <section class="grid-2" data-visible-for="admin,operations">
+          <section class="grid-2">
             <article class="card">
               <h2>Add Vehicle</h2>
               <form id="vehicle-form" class="stack">
@@ -202,7 +194,7 @@
             </article>
           </section>
 
-          <section class="card" data-visible-for="admin,operations">
+          <section class="card">
             <h2>Bulk Vehicle CSV Import</h2>
             <form id="vehicle-csv-form" class="stack">
           <label>CSV File <input type="file" id="vehicle-csv-file" accept=".csv,text/csv" /></label>

@@ -1,10 +1,3 @@
-const APP_ROLE_KEY = "car_rental_role";
-const ROLE_TO_ALLOWED_PAGES = {
-  admin: new Set(["home", "fleet", "customers", "reservations", "maintenance"]),
-  operations: new Set(["home", "fleet", "customers", "reservations", "maintenance"]),
-  agent: new Set(["home", "fleet", "customers", "reservations"]),
-};
-
 function showToast(message, isError = false) {
   const toast = document.getElementById("toast");
   if (!toast) {
@@ -73,40 +66,6 @@ function getCurrentPageKey() {
   return fileName.replace(".html", "") || "home";
 }
 
-function getRole() {
-  const saved = localStorage.getItem(APP_ROLE_KEY);
-  if (saved && Object.prototype.hasOwnProperty.call(ROLE_TO_ALLOWED_PAGES, saved)) {
-    return saved;
-  }
-  return "admin";
-}
-
-function setRole(role) {
-  if (!Object.prototype.hasOwnProperty.call(ROLE_TO_ALLOWED_PAGES, role)) {
-    return;
-  }
-  localStorage.setItem(APP_ROLE_KEY, role);
-}
-
-function roleIncludes(role, csvList) {
-  if (!csvList) {
-    return true;
-  }
-  const allowedRoles = String(csvList)
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return allowedRoles.includes(role);
-}
-
-function applyRoleVisibility(role) {
-  document.querySelectorAll("[data-roles], [data-visible-for]").forEach((element) => {
-    const roleConfig = element.getAttribute("data-roles") || element.getAttribute("data-visible-for");
-    const visible = roleIncludes(role, roleConfig);
-    element.classList.toggle("role-hidden", !visible);
-  });
-}
-
 function updateActiveMenuLink() {
   const currentPage = getCurrentPageKey();
   document.querySelectorAll(".sidebar-menu a[data-page]").forEach((link) => {
@@ -115,42 +74,8 @@ function updateActiveMenuLink() {
   });
 }
 
-function enforceRolePageAccess(role) {
-  const page = getCurrentPageKey();
-  const allowedPages = ROLE_TO_ALLOWED_PAGES[role] || ROLE_TO_ALLOWED_PAGES.admin;
-  if (allowedPages.has(page)) {
-    return;
-  }
-
-  const fallback = Array.from(allowedPages)[0] || "home";
-  const fallbackUrl = fallback === "home" ? "/" : `/${fallback}.html`;
-  window.location.replace(fallbackUrl);
-}
-
-function setupRoleSelector() {
-  const selector = document.getElementById("role-select");
-  if (!selector) {
-    return;
-  }
-
-  const role = getRole();
-  selector.value = role;
-
-  selector.addEventListener("change", () => {
-    setRole(selector.value);
-    const updatedRole = getRole();
-    applyRoleVisibility(updatedRole);
-    updateActiveMenuLink();
-    enforceRolePageAccess(updatedRole);
-  });
-}
-
 function initAppShell() {
-  const role = getRole();
-  applyRoleVisibility(role);
   updateActiveMenuLink();
-  setupRoleSelector();
-  enforceRolePageAccess(role);
 }
 
 initAppShell();
@@ -161,5 +86,4 @@ window.AppCommon = {
   formatMoney,
   collectCheckedValues,
   vehicleLabel,
-  getRole,
 };

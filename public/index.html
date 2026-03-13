@@ -11,20 +11,12 @@
       <aside class="sidebar">
         <a class="sidebar-brand" href="/">Car Rental OS</a>
         <p class="sidebar-subtitle">Rental operations platform</p>
-        <label class="role-label">
-          Signed in as
-          <select id="role-select">
-            <option value="admin">Admin</option>
-            <option value="operations">Operations</option>
-            <option value="agent">Rental Agent</option>
-          </select>
-        </label>
         <nav class="sidebar-menu">
-          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
-          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations,agent">Fleet</a>
-          <a href="/customers.html" data-page="customers" data-roles="admin,operations,agent">Customers</a>
-          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
-          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+          <a href="/" data-page="home">Home</a>
+          <a href="/fleet.html" data-page="fleet">Fleet</a>
+          <a href="/customers.html" data-page="customers">Customers</a>
+          <a href="/reservations.html" data-page="reservations">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance">Maintenance</a>
         </nav>
       </aside>
 
@@ -43,24 +35,24 @@
           <section class="card">
             <h2>Main Sections</h2>
             <div class="quick-links">
-              <a class="quick-link" href="/fleet.html" data-roles="admin,operations,agent">
+              <a class="quick-link" href="/fleet.html">
                 <h3>Fleet</h3>
                 <p>Add/edit vehicles and bulk import from CSV.</p>
               </a>
-              <a class="quick-link" href="/customers.html" data-roles="admin,operations,agent">
+              <a class="quick-link" href="/customers.html">
                 <h3>Customers</h3>
                 <p>Register customers and manage customer records.</p>
               </a>
-              <a class="quick-link" href="/reservations.html" data-roles="admin,operations,agent">
+              <a class="quick-link" href="/reservations.html">
                 <h3>Reservations</h3>
                 <p>Create bookings, check pricing, and monitor trips.</p>
               </a>
-              <a class="quick-link" href="/maintenance.html" data-roles="admin,operations">
+              <a class="quick-link" href="/maintenance.html">
                 <h3>Maintenance & Documents</h3>
                 <p>Upload compliance docs and track work orders.</p>
               </a>
             </div>
-            <div class="soft-box" data-visible-for="admin,operations">
+            <div class="soft-box">
               <strong>Need demo records?</strong>
               <p style="margin: 0.35rem 0 0.7rem">Tap once to restore sample vehicles, customers, reservations, and work orders.</p>
               <button type="button" id="restore-demo-data-btn">Restore Demo Data</button>

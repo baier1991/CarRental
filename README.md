@@ -6,7 +6,7 @@ A starter product for rental car companies to manage fleet, customers, reservati
 
 - **Backend API** built with Node.js + Express
 - **Frontend dashboard** split by section with sidebar navigation
-- **Role-based menu visibility** (`admin`, `operations`, `agent`) with page-level access controls
+- **Frontend ready for backend auth integration** (permissions to be enforced server-side after login)
 - **Pricing engine** with insurance tiers, add-ons, discount codes, and tax
 - **Reservation conflict checks** to prevent overlapping active bookings
 - **Advanced vehicle intake** with VIN, category, branch, compliance dates, service schedule, and rate plans
