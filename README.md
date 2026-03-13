@@ -9,6 +9,10 @@ A starter product for rental car companies to manage fleet, customers, reservati
 - **Pricing engine** with insurance tiers, add-ons, discount codes, and tax
 - **Reservation conflict checks** to prevent overlapping active bookings
 - **Advanced vehicle intake** with VIN, category, branch, compliance dates, service schedule, and rate plans
+- **Vehicle editing workflows** for rates, status, odometer, compliance, and service updates
+- **Bulk CSV fleet import** for onboarding many cars at once
+- **Vehicle document upload** (registration/insurance/inspection/contracts)
+- **Maintenance work orders** linked to each vehicle
 - **Seed data** for quick local demo
 
 ## Quick start
@@ -58,6 +62,9 @@ Detailed steps: [`docs/deployment.md`](docs/deployment.md)
 │   ├── data/
 │   │   └── store.js
 │   ├── domain/
+│   │   ├── vehicleImport.js
+│   │   ├── vehicles.js
+│   │   ├── workOrders.js
 │   │   ├── pricing.js
 │   │   └── reservations.js
 │   └── server.js
@@ -68,7 +75,14 @@ Detailed steps: [`docs/deployment.md`](docs/deployment.md)
 
 - `GET /api/dashboard`
 - `GET/POST /api/vehicles`
+- `PATCH /api/vehicles/:vehicleId`
 - `PATCH /api/vehicles/:vehicleId/status`
+- `POST /api/vehicles/import-csv`
+- `GET/POST /api/vehicles/:vehicleId/documents`
+- `DELETE /api/vehicles/:vehicleId/documents/:documentId`
+- `GET /api/work-orders`
+- `GET/POST /api/vehicles/:vehicleId/work-orders`
+- `PATCH /api/work-orders/:workOrderId`
 - `GET/POST /api/customers`
 - `GET/POST /api/reservations`
 - `PATCH /api/reservations/:reservationId/status`

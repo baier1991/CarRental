@@ -7,6 +7,8 @@ const DEFAULT_STORE = {
   vehicles: [],
   customers: [],
   reservations: [],
+  vehicleDocuments: [],
+  workOrders: [],
 };
 
 function ensureStoreFile() {
@@ -32,6 +34,8 @@ function readStore() {
     vehicles: Array.isArray(parsed.vehicles) ? parsed.vehicles : [],
     customers: Array.isArray(parsed.customers) ? parsed.customers : [],
     reservations: Array.isArray(parsed.reservations) ? parsed.reservations : [],
+    vehicleDocuments: Array.isArray(parsed.vehicleDocuments) ? parsed.vehicleDocuments : [],
+    workOrders: Array.isArray(parsed.workOrders) ? parsed.workOrders : [],
   };
 }
 
@@ -40,6 +44,8 @@ function writeStore(store) {
     vehicles: Array.isArray(store.vehicles) ? store.vehicles : [],
     customers: Array.isArray(store.customers) ? store.customers : [],
     reservations: Array.isArray(store.reservations) ? store.reservations : [],
+    vehicleDocuments: Array.isArray(store.vehicleDocuments) ? store.vehicleDocuments : [],
+    workOrders: Array.isArray(store.workOrders) ? store.workOrders : [],
   };
   fs.writeFileSync(STORE_FILE_PATH, JSON.stringify(normalizedStore, null, 2), "utf8");
   return normalizedStore;

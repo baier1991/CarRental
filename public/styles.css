@@ -141,6 +141,10 @@ th {
   font-size: 0.9rem;
 }
 
+small {
+  color: #475569;
+}
+
 .badge {
   display: inline-block;
   border-radius: 999px;
@@ -157,6 +161,12 @@ th {
   border: 1px dashed #94a3b8;
   min-height: 3rem;
   background: #f8fafc;
+}
+
+.table-wrap button {
+  margin-left: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
 }
 
 .toast {

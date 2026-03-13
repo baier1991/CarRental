@@ -108,6 +108,10 @@ function isValidUrl(value) {
   }
 }
 
+function hasOwn(payload, key) {
+  return Object.prototype.hasOwnProperty.call(payload, key);
+}
+
 function normalizeVehicleInput(payload = {}) {
   const errors = [];
 
@@ -237,6 +241,144 @@ function normalizeVehicleInput(payload = {}) {
   };
 }
 
+function normalizeVehiclePatchInput(payload = {}) {
+  const errors = [];
+  const patch = {};
+
+  function setTextField(key, { uppercase = false, requiredIfPresent = false } = {}) {
+    if (!hasOwn(payload, key)) {
+      return;
+    }
+    const raw = sanitizeText(payload[key]);
+    if (requiredIfPresent && raw === null) {
+      errors.push(`${key} cannot be empty.`);
+      return;
+    }
+    patch[key] = uppercase && raw ? raw.toUpperCase() : raw;
+  }
+
+  function setNumberField(key, parser, parserArgs = []) {
+    if (!hasOwn(payload, key)) {
+      return;
+    }
+    const value = parser(payload[key], key, errors, ...parserArgs);
+    patch[key] = value;
+  }
+
+  setTextField("plateNumber", { uppercase: true, requiredIfPresent: true });
+  setTextField("vin", { uppercase: true });
+  setTextField("make", { requiredIfPresent: true });
+  setTextField("model", { requiredIfPresent: true });
+  setTextField("location", { requiredIfPresent: true });
+  setTextField("branchCode", { uppercase: true });
+  setTextField("color");
+  setTextField("transmission");
+  setTextField("fuelType");
+  setTextField("notes");
+  setTextField("imageUrl");
+
+  setNumberField("year", parseInteger, [{ min: 1990, max: 2100 }]);
+  setNumberField("dailyRate", parsePositiveNumber);
+  setNumberField("weekendDailyRate", parsePositiveNumber);
+  setNumberField("weeklyRate", parsePositiveNumber);
+  setNumberField("monthlyRate", parsePositiveNumber);
+  setNumberField("securityDeposit", parsePositiveNumber);
+  setNumberField("mileageLimitPerDay", parsePositiveNumber);
+  setNumberField("extraKmRate", parsePositiveNumber);
+  setNumberField("acquisitionCost", parsePositiveNumber);
+  setNumberField("odometerKm", parseInteger, [{ min: 0 }]);
+  setNumberField("seats", parseInteger, [{ min: 1, max: 20 }]);
+  setNumberField("doors", parseInteger, [{ min: 2, max: 8 }]);
+  setNumberField("nextServiceAtKm", parseInteger, [{ min: 0 }]);
+
+  if (hasOwn(payload, "registrationExpiryDate")) {
+    patch.registrationExpiryDate = parseDateOnly(
+      payload.registrationExpiryDate,
+      "registrationExpiryDate",
+      errors
+    );
+  }
+  if (hasOwn(payload, "insuranceExpiryDate")) {
+    patch.insuranceExpiryDate = parseDateOnly(payload.insuranceExpiryDate, "insuranceExpiryDate", errors);
+  }
+  if (hasOwn(payload, "inspectionDueDate")) {
+    patch.inspectionDueDate = parseDateOnly(payload.inspectionDueDate, "inspectionDueDate", errors);
+  }
+  if (hasOwn(payload, "nextServiceDate")) {
+    patch.nextServiceDate = parseDateOnly(payload.nextServiceDate, "nextServiceDate", errors);
+  }
+  if (hasOwn(payload, "acquisitionDate")) {
+    patch.acquisitionDate = parseDateOnly(payload.acquisitionDate, "acquisitionDate", errors);
+  }
+
+  if (hasOwn(payload, "status")) {
+    const status = String(payload.status || "")
+      .trim()
+      .toLowerCase();
+    if (!VEHICLE_STATUSES.has(status)) {
+      errors.push("Invalid vehicle status.");
+    } else {
+      patch.status = status;
+    }
+  }
+
+  if (hasOwn(payload, "category")) {
+    const category = String(payload.category || "")
+      .trim()
+      .toLowerCase();
+    if (!VEHICLE_CATEGORIES.has(category)) {
+      errors.push("Invalid vehicle category.");
+    } else {
+      patch.category = category;
+    }
+  }
+
+  if (hasOwn(payload, "ownershipType")) {
+    const ownershipType = String(payload.ownershipType || "")
+      .trim()
+      .toLowerCase();
+    if (!OWNERSHIP_TYPES.has(ownershipType)) {
+      errors.push("Invalid ownershipType.");
+    } else {
+      patch.ownershipType = ownershipType;
+    }
+  }
+
+  if (hasOwn(payload, "features")) {
+    patch.features = parseFeatures(payload.features);
+  }
+
+  if (patch.vin && patch.vin.length !== 17) {
+    errors.push("vin must be exactly 17 characters.");
+  }
+  if (patch.plateNumber && patch.plateNumber.length < 4) {
+    errors.push("plateNumber must be at least 4 characters.");
+  }
+  if (patch.dailyRate !== undefined && patch.dailyRate !== null && patch.dailyRate <= 0) {
+    errors.push("dailyRate must be greater than zero.");
+  }
+  if (patch.imageUrl && !isValidUrl(patch.imageUrl)) {
+    errors.push("imageUrl must be a valid URL.");
+  }
+
+  const odometerCandidate = hasOwn(patch, "odometerKm") ? patch.odometerKm : null;
+  const serviceAtCandidate = hasOwn(patch, "nextServiceAtKm") ? patch.nextServiceAtKm : null;
+  if (
+    odometerCandidate !== null &&
+    serviceAtCandidate !== null &&
+    odometerCandidate !== undefined &&
+    serviceAtCandidate !== undefined &&
+    serviceAtCandidate < odometerCandidate
+  ) {
+    errors.push("nextServiceAtKm must be greater than or equal to odometerKm.");
+  }
+
+  return {
+    errors,
+    normalizedPatch: patch,
+  };
+}
+
 function daysBetween(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -317,5 +459,6 @@ module.exports = {
   OWNERSHIP_TYPES,
   VEHICLE_FEATURE_KEYS,
   normalizeVehicleInput,
+  normalizeVehiclePatchInput,
   getVehicleAlerts,
 };

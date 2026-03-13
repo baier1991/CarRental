@@ -161,5 +161,25 @@
       "createdAt": "2026-02-10T07:00:00.000Z",
       "updatedAt": "2026-02-10T07:00:00.000Z"
     }
+  ],
+  "vehicleDocuments": [],
+  "workOrders": [
+    {
+      "id": "wo-001",
+      "vehicleId": "veh-003",
+      "title": "Battery and brake inspection",
+      "description": "Preventive inspection before returning to available fleet",
+      "priority": "high",
+      "status": "in_progress",
+      "scheduledDate": "2026-02-25",
+      "odometerKm": 50800,
+      "costEstimate": 420,
+      "actualCost": null,
+      "vendorName": "Abu Dhabi EV Service Center",
+      "notes": "Check brake pads and battery health report",
+      "createdAt": "2026-02-20T07:00:00.000Z",
+      "updatedAt": "2026-02-20T07:00:00.000Z",
+      "completedAt": null
+    }
   ]
 }

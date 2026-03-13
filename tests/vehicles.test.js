@@ -1,7 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { normalizeVehicleInput, getVehicleAlerts } = require("../src/domain/vehicles");
+const {
+  normalizeVehicleInput,
+  normalizeVehiclePatchInput,
+  getVehicleAlerts,
+} = require("../src/domain/vehicles");
 
 test("normalizeVehicleInput accepts full intake payload", () => {
   const { errors, normalizedVehicle } = normalizeVehicleInput({
@@ -80,4 +84,18 @@ test("getVehicleAlerts returns critical alerts for expired docs and overdue serv
   assert.ok(alerts.some((alert) => alert.code === "insuranceExpiryDate:expired"));
   assert.ok(alerts.some((alert) => alert.code === "service:overdue_km"));
   assert.ok(alerts.some((alert) => alert.code === "service:overdue_date"));
+});
+
+test("normalizeVehiclePatchInput accepts partial updates", () => {
+  const { errors, normalizedPatch } = normalizeVehiclePatchInput({
+    status: "maintenance",
+    odometerKm: 32000,
+    nextServiceAtKm: 36000,
+    features: "bluetooth",
+  });
+
+  assert.equal(errors.length, 0);
+  assert.equal(normalizedPatch.status, "maintenance");
+  assert.equal(normalizedPatch.odometerKm, 32000);
+  assert.deepEqual(normalizedPatch.features, ["bluetooth"]);
 });
