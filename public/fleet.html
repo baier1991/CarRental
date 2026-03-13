@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Rental OS - Fleet</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/">Car Rental OS</a>
+        <div class="menu">
+          <a href="/">Home</a>
+          <a href="/fleet.html" class="active">Fleet</a>
+          <a href="/customers.html">Customers</a>
+          <a href="/reservations.html">Reservations</a>
+          <a href="/maintenance.html">Maintenance</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="container page-header">
+      <h1>Fleet Management</h1>
+      <p class="subtitle">Vehicle onboarding, editing, pricing strategy, and fleet visibility.</p>
+    </header>
+
+    <main class="container">
+      <section class="grid-2">
+        <article class="card">
+          <h2>Add Vehicle</h2>
+          <form id="vehicle-form" class="stack">
+            <div class="grid-2">
+              <label>Plate Number <input name="plateNumber" required /></label>
+              <label>VIN (17 chars) <input name="vin" maxlength="17" minlength="17" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Make <input name="make" required /></label>
+              <label>Model <input name="model" required /></label>
+            </div>
+            <div class="grid-2">
+              <label>Year <input type="number" name="year" min="1990" max="2100" required /></label>
+              <label>
+                Category
+                <select name="category">
+                  <option value="sedan">sedan</option>
+                  <option value="economy">economy</option>
+                  <option value="compact">compact</option>
+                  <option value="suv">suv</option>
+                  <option value="luxury">luxury</option>
+                  <option value="van">van</option>
+                  <option value="pickup">pickup</option>
+                  <option value="electric">electric</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Daily Rate <input type="number" name="dailyRate" step="0.01" required /></label>
+              <label>Weekend Daily Rate <input type="number" name="weekendDailyRate" step="0.01" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Weekly Rate <input type="number" name="weeklyRate" step="0.01" /></label>
+              <label>Monthly Rate <input type="number" name="monthlyRate" step="0.01" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Security Deposit <input type="number" name="securityDeposit" step="0.01" /></label>
+              <label>
+                Status
+                <select name="status">
+                  <option value="available">available</option>
+                  <option value="maintenance">maintenance</option>
+                  <option value="cleaning">cleaning</option>
+                  <option value="inactive">inactive</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Location <input name="location" required /></label>
+              <label>Branch Code <input name="branchCode" placeholder="DXB-01" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Transmission <input name="transmission" /></label>
+              <label>Fuel Type <input name="fuelType" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Color <input name="color" /></label>
+              <label>Odometer (km) <input type="number" name="odometerKm" min="0" step="1" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Seats <input type="number" name="seats" min="1" max="20" step="1" /></label>
+              <label>Doors <input type="number" name="doors" min="2" max="8" step="1" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Mileage Limit / Day (km) <input type="number" name="mileageLimitPerDay" min="0" step="0.1" /></label>
+              <label>Extra km Rate <input type="number" name="extraKmRate" min="0" step="0.01" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Registration Expiry <input type="date" name="registrationExpiryDate" /></label>
+              <label>Insurance Expiry <input type="date" name="insuranceExpiryDate" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Inspection Due Date <input type="date" name="inspectionDueDate" /></label>
+              <label>Next Service Date <input type="date" name="nextServiceDate" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Next Service at KM <input type="number" name="nextServiceAtKm" min="0" step="1" /></label>
+              <label>
+                Ownership Type
+                <select name="ownershipType">
+                  <option value="owned">owned</option>
+                  <option value="leased">leased</option>
+                  <option value="franchise">franchise</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Acquisition Date <input type="date" name="acquisitionDate" /></label>
+              <label>Acquisition Cost <input type="number" name="acquisitionCost" min="0" step="0.01" /></label>
+            </div>
+            <label>Image URL <input type="url" name="imageUrl" placeholder="https://..." /></label>
+            <fieldset>
+              <legend>Vehicle Features</legend>
+              <label><input type="checkbox" name="features" value="bluetooth" /> Bluetooth</label>
+              <label><input type="checkbox" name="features" value="appleCarPlay" /> Apple CarPlay</label>
+              <label><input type="checkbox" name="features" value="androidAuto" /> Android Auto</label>
+              <label><input type="checkbox" name="features" value="backupCamera" /> Backup Camera</label>
+              <label><input type="checkbox" name="features" value="cruiseControl" /> Cruise Control</label>
+              <label><input type="checkbox" name="features" value="leatherSeats" /> Leather Seats</label>
+              <label><input type="checkbox" name="features" value="sunroof" /> Sunroof</label>
+              <label><input type="checkbox" name="features" value="parkingSensors" /> Parking Sensors</label>
+              <label><input type="checkbox" name="features" value="tollTag" /> Toll Tag</label>
+            </fieldset>
+            <label>Notes <textarea name="notes" rows="2"></textarea></label>
+            <button type="submit">Add Vehicle</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>Edit Vehicle</h2>
+          <form id="edit-vehicle-form" class="stack">
+            <label>Vehicle <select id="edit-vehicle-select" name="vehicleId" required></select></label>
+            <div class="grid-2">
+              <label>Daily Rate <input type="number" name="dailyRate" step="0.01" /></label>
+              <label>Weekend Daily Rate <input type="number" name="weekendDailyRate" step="0.01" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Weekly Rate <input type="number" name="weeklyRate" step="0.01" /></label>
+              <label>Monthly Rate <input type="number" name="monthlyRate" step="0.01" /></label>
+            </div>
+            <div class="grid-2">
+              <label>
+                Status
+                <select name="status">
+                  <option value="available">available</option>
+                  <option value="maintenance">maintenance</option>
+                  <option value="cleaning">cleaning</option>
+                  <option value="inactive">inactive</option>
+                </select>
+              </label>
+              <label>Branch Code <input name="branchCode" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Location <input name="location" /></label>
+              <label>Odometer (km) <input type="number" name="odometerKm" min="0" step="1" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Registration Expiry <input type="date" name="registrationExpiryDate" /></label>
+              <label>Insurance Expiry <input type="date" name="insuranceExpiryDate" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Inspection Due <input type="date" name="inspectionDueDate" /></label>
+              <label>Next Service Date <input type="date" name="nextServiceDate" /></label>
+            </div>
+            <div class="grid-2">
+              <label>Next Service at KM <input type="number" name="nextServiceAtKm" min="0" step="1" /></label>
+              <label>Security Deposit <input type="number" name="securityDeposit" min="0" step="0.01" /></label>
+            </div>
+            <fieldset>
+              <legend>Vehicle Features</legend>
+              <label><input type="checkbox" name="editFeatures" value="bluetooth" /> Bluetooth</label>
+              <label><input type="checkbox" name="editFeatures" value="appleCarPlay" /> Apple CarPlay</label>
+              <label><input type="checkbox" name="editFeatures" value="androidAuto" /> Android Auto</label>
+              <label><input type="checkbox" name="editFeatures" value="backupCamera" /> Backup Camera</label>
+              <label><input type="checkbox" name="editFeatures" value="cruiseControl" /> Cruise Control</label>
+              <label><input type="checkbox" name="editFeatures" value="leatherSeats" /> Leather Seats</label>
+              <label><input type="checkbox" name="editFeatures" value="sunroof" /> Sunroof</label>
+              <label><input type="checkbox" name="editFeatures" value="parkingSensors" /> Parking Sensors</label>
+              <label><input type="checkbox" name="editFeatures" value="tollTag" /> Toll Tag</label>
+            </fieldset>
+            <label>Notes <textarea name="notes" rows="2"></textarea></label>
+            <button type="submit">Save Vehicle Changes</button>
+          </form>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Bulk Vehicle CSV Import</h2>
+        <form id="vehicle-csv-form" class="stack">
+          <label>CSV File <input type="file" id="vehicle-csv-file" accept=".csv,text/csv" /></label>
+          <div class="grid-2">
+            <label>Default Location <input name="defaultLocation" placeholder="Optional fallback" /></label>
+            <label>Default Branch Code <input name="defaultBranchCode" placeholder="Optional fallback" /></label>
+          </div>
+          <label>
+            CSV Content
+            <textarea
+              id="vehicle-csv-content"
+              name="csvContent"
+              rows="8"
+              placeholder="plateNumber,make,model,year,dailyRate,location&#10;DXB-9901,Toyota,Yaris,2024,52,Dubai Downtown"
+              required
+            ></textarea>
+          </label>
+          <label><input type="checkbox" name="skipDuplicates" checked /> Skip duplicate rows (plate/VIN)</label>
+          <button type="submit">Import CSV</button>
+        </form>
+        <div id="csv-import-result" class="soft-box"></div>
+      </section>
+
+      <section class="card">
+        <h2>Fleet List</h2>
+        <div id="vehicle-list" class="table-wrap"></div>
+      </section>
+
+      <div id="toast" class="toast hidden" aria-live="polite"></div>
+    </main>
+
+    <script src="/common.js"></script>
+    <script src="/fleet.js"></script>
+  </body>
+</html>

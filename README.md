@@ -5,7 +5,7 @@ A starter product for rental car companies to manage fleet, customers, reservati
 ## What is included
 
 - **Backend API** built with Node.js + Express
-- **Frontend dashboard** (plain HTML/CSS/JS) served by the backend
+- **Frontend dashboard** split by section (Home, Fleet, Customers, Reservations, Maintenance)
 - **Pricing engine** with insurance tiers, add-ons, discount codes, and tax
 - **Reservation conflict checks** to prevent overlapping active bookings
 - **Advanced vehicle intake** with VIN, category, branch, compliance dates, service schedule, and rate plans
@@ -24,8 +24,16 @@ npm run start
 
 Open:
 
-- `http://localhost:3000` for the dashboard
+- `http://localhost:3000` for the home dashboard
 - `http://localhost:3000/api/health` for API health check
+
+Main UI routes:
+
+- `/` - Home
+- `/fleet.html` - Fleet
+- `/customers.html` - Customers
+- `/reservations.html` - Reservations
+- `/maintenance.html` - Maintenance & Documents
 
 ## One-click cloud deploy (open on mobile)
 
@@ -53,8 +61,17 @@ Detailed steps: [`docs/deployment.md`](docs/deployment.md)
 │   ├── deployment.md
 │   └── product-blueprint.md
 ├── public/
-│   ├── app.js
+│   ├── common.js
+│   ├── customers.html
+│   ├── customers.js
+│   ├── fleet.html
+│   ├── fleet.js
+│   ├── home.js
 │   ├── index.html
+│   ├── maintenance.html
+│   ├── maintenance.js
+│   ├── reservations.html
+│   ├── reservations.js
 │   └── styles.css
 ├── railway.json
 ├── render.yaml

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Rental OS - Customers</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/">Car Rental OS</a>
+        <div class="menu">
+          <a href="/">Home</a>
+          <a href="/fleet.html">Fleet</a>
+          <a href="/customers.html" class="active">Customers</a>
+          <a href="/reservations.html">Reservations</a>
+          <a href="/maintenance.html">Maintenance</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="container page-header">
+      <h1>Customer Management</h1>
+      <p class="subtitle">Register customers and keep license/contact records organized.</p>
+    </header>
+
+    <main class="container">
+      <section class="grid-2">
+        <article class="card">
+          <h2>Add Customer</h2>
+          <form id="customer-form" class="stack">
+            <div class="grid-2">
+              <label>First Name <input name="firstName" required /></label>
+              <label>Last Name <input name="lastName" required /></label>
+            </div>
+            <div class="grid-2">
+              <label>Email <input type="email" name="email" required /></label>
+              <label>Phone <input name="phone" required /></label>
+            </div>
+            <label>License Number <input name="licenseNumber" required /></label>
+            <button type="submit">Add Customer</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>Overview</h2>
+          <div id="customer-metrics" class="metrics-grid"></div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Customer List</h2>
+        <div id="customer-list" class="table-wrap"></div>
+      </section>
+
+      <div id="toast" class="toast hidden" aria-live="polite"></div>
+    </main>
+
+    <script src="/common.js"></script>
+    <script src="/customers.js"></script>
+  </body>
+</html>

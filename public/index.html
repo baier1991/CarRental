@@ -3,619 +3,71 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Car Rental OS</title>
+    <title>Car Rental OS - Home</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="container">
-      <h1>Car Rental OS</h1>
-      <p class="subtitle">
-        WheelSys-style platform starter for rental companies: fleet, reservations, pricing, and customer
-        operations.
-      </p>
+    <nav class="top-nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/">Car Rental OS</a>
+        <div class="menu">
+          <a href="/" class="active">Home</a>
+          <a href="/fleet.html">Fleet</a>
+          <a href="/customers.html">Customers</a>
+          <a href="/reservations.html">Reservations</a>
+          <a href="/maintenance.html">Maintenance</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="container page-header">
+      <h1>Operations Home</h1>
+      <p class="subtitle">Clear navigation and separated workflows for rental operations teams.</p>
     </header>
 
     <main class="container">
       <section class="card">
-        <h2>Dashboard</h2>
+        <h2>Business Snapshot</h2>
         <div id="dashboard-metrics" class="metrics-grid"></div>
       </section>
 
-      <section class="grid-2">
-        <article class="card">
-          <h2>Add Vehicle</h2>
-          <form id="vehicle-form" class="stack">
-            <div class="grid-2">
-              <label>
-                Plate Number
-                <input name="plateNumber" required />
-              </label>
-              <label>
-                VIN (17 chars)
-                <input name="vin" maxlength="17" minlength="17" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Make
-                <input name="make" required />
-              </label>
-              <label>
-                Model
-                <input name="model" required />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Year
-                <input type="number" name="year" min="1990" max="2100" required />
-              </label>
-              <label>
-                Category
-                <select name="category">
-                  <option value="sedan">sedan</option>
-                  <option value="economy">economy</option>
-                  <option value="compact">compact</option>
-                  <option value="suv">suv</option>
-                  <option value="luxury">luxury</option>
-                  <option value="van">van</option>
-                  <option value="pickup">pickup</option>
-                  <option value="electric">electric</option>
-                </select>
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Daily Rate
-                <input type="number" name="dailyRate" step="0.01" required />
-              </label>
-              <label>
-                Weekend Daily Rate
-                <input type="number" name="weekendDailyRate" step="0.01" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Weekly Rate
-                <input type="number" name="weeklyRate" step="0.01" />
-              </label>
-              <label>
-                Monthly Rate
-                <input type="number" name="monthlyRate" step="0.01" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Security Deposit
-                <input type="number" name="securityDeposit" step="0.01" />
-              </label>
-              <label>
-                Status
-                <select name="status">
-                  <option value="available">available</option>
-                  <option value="maintenance">maintenance</option>
-                  <option value="cleaning">cleaning</option>
-                  <option value="inactive">inactive</option>
-                </select>
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Location
-                <input name="location" required />
-              </label>
-              <label>
-                Branch Code
-                <input name="branchCode" placeholder="DXB-01" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Transmission
-                <input name="transmission" />
-              </label>
-              <label>
-                Fuel Type
-                <input name="fuelType" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Color
-                <input name="color" />
-              </label>
-              <label>
-                Odometer (km)
-                <input type="number" name="odometerKm" min="0" step="1" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Seats
-                <input type="number" name="seats" min="1" max="20" step="1" />
-              </label>
-              <label>
-                Doors
-                <input type="number" name="doors" min="2" max="8" step="1" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Mileage Limit / Day (km)
-                <input type="number" name="mileageLimitPerDay" min="0" step="0.1" />
-              </label>
-              <label>
-                Extra km Rate
-                <input type="number" name="extraKmRate" min="0" step="0.01" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Registration Expiry
-                <input type="date" name="registrationExpiryDate" />
-              </label>
-              <label>
-                Insurance Expiry
-                <input type="date" name="insuranceExpiryDate" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Inspection Due Date
-                <input type="date" name="inspectionDueDate" />
-              </label>
-              <label>
-                Next Service Date
-                <input type="date" name="nextServiceDate" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Next Service at KM
-                <input type="number" name="nextServiceAtKm" min="0" step="1" />
-              </label>
-              <label>
-                Ownership Type
-                <select name="ownershipType">
-                  <option value="owned">owned</option>
-                  <option value="leased">leased</option>
-                  <option value="franchise">franchise</option>
-                </select>
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Acquisition Date
-                <input type="date" name="acquisitionDate" />
-              </label>
-              <label>
-                Acquisition Cost
-                <input type="number" name="acquisitionCost" min="0" step="0.01" />
-              </label>
-            </div>
-            <label>
-              Image URL
-              <input type="url" name="imageUrl" placeholder="https://..." />
-            </label>
-            <fieldset>
-              <legend>Vehicle Features</legend>
-              <label><input type="checkbox" name="features" value="bluetooth" /> Bluetooth</label>
-              <label><input type="checkbox" name="features" value="appleCarPlay" /> Apple CarPlay</label>
-              <label><input type="checkbox" name="features" value="androidAuto" /> Android Auto</label>
-              <label><input type="checkbox" name="features" value="backupCamera" /> Backup Camera</label>
-              <label><input type="checkbox" name="features" value="cruiseControl" /> Cruise Control</label>
-              <label><input type="checkbox" name="features" value="leatherSeats" /> Leather Seats</label>
-              <label><input type="checkbox" name="features" value="sunroof" /> Sunroof</label>
-              <label><input type="checkbox" name="features" value="parkingSensors" /> Parking Sensors</label>
-              <label><input type="checkbox" name="features" value="tollTag" /> Toll Tag</label>
-            </fieldset>
-            <label>
-              Notes
-              <textarea name="notes" rows="3" placeholder="Damage notes, intake checklist, etc."></textarea>
-            </label>
-            <button type="submit">Add Vehicle</button>
-          </form>
-        </article>
-
-        <article class="card">
-          <h2>Edit Vehicle</h2>
-          <form id="edit-vehicle-form" class="stack">
-            <label>
-              Vehicle
-              <select id="edit-vehicle-select" name="vehicleId" required></select>
-            </label>
-            <div class="grid-2">
-              <label>
-                Daily Rate
-                <input type="number" name="dailyRate" step="0.01" />
-              </label>
-              <label>
-                Weekend Daily Rate
-                <input type="number" name="weekendDailyRate" step="0.01" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Weekly Rate
-                <input type="number" name="weeklyRate" step="0.01" />
-              </label>
-              <label>
-                Monthly Rate
-                <input type="number" name="monthlyRate" step="0.01" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Status
-                <select name="status">
-                  <option value="available">available</option>
-                  <option value="maintenance">maintenance</option>
-                  <option value="cleaning">cleaning</option>
-                  <option value="inactive">inactive</option>
-                </select>
-              </label>
-              <label>
-                Branch Code
-                <input name="branchCode" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Location
-                <input name="location" />
-              </label>
-              <label>
-                Odometer (km)
-                <input type="number" name="odometerKm" min="0" step="1" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Registration Expiry
-                <input type="date" name="registrationExpiryDate" />
-              </label>
-              <label>
-                Insurance Expiry
-                <input type="date" name="insuranceExpiryDate" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Inspection Due
-                <input type="date" name="inspectionDueDate" />
-              </label>
-              <label>
-                Next Service Date
-                <input type="date" name="nextServiceDate" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Next Service at KM
-                <input type="number" name="nextServiceAtKm" min="0" step="1" />
-              </label>
-              <label>
-                Security Deposit
-                <input type="number" name="securityDeposit" min="0" step="0.01" />
-              </label>
-            </div>
-            <fieldset>
-              <legend>Vehicle Features</legend>
-              <label><input type="checkbox" name="editFeatures" value="bluetooth" /> Bluetooth</label>
-              <label><input type="checkbox" name="editFeatures" value="appleCarPlay" /> Apple CarPlay</label>
-              <label><input type="checkbox" name="editFeatures" value="androidAuto" /> Android Auto</label>
-              <label><input type="checkbox" name="editFeatures" value="backupCamera" /> Backup Camera</label>
-              <label><input type="checkbox" name="editFeatures" value="cruiseControl" /> Cruise Control</label>
-              <label><input type="checkbox" name="editFeatures" value="leatherSeats" /> Leather Seats</label>
-              <label><input type="checkbox" name="editFeatures" value="sunroof" /> Sunroof</label>
-              <label><input type="checkbox" name="editFeatures" value="parkingSensors" /> Parking Sensors</label>
-              <label><input type="checkbox" name="editFeatures" value="tollTag" /> Toll Tag</label>
-            </fieldset>
-            <label>
-              Notes
-              <textarea name="notes" rows="2"></textarea>
-            </label>
-            <button type="submit">Save Vehicle Changes</button>
-          </form>
-        </article>
-      </section>
-
-      <section class="grid-2">
-        <article class="card">
-          <h2>Bulk Vehicle CSV Import</h2>
-          <form id="vehicle-csv-form" class="stack">
-            <label>
-              CSV File
-              <input type="file" id="vehicle-csv-file" accept=".csv,text/csv" />
-            </label>
-            <div class="grid-2">
-              <label>
-                Default Location
-                <input name="defaultLocation" placeholder="Optional fallback" />
-              </label>
-              <label>
-                Default Branch Code
-                <input name="defaultBranchCode" placeholder="Optional fallback" />
-              </label>
-            </div>
-            <label>
-              CSV Content
-              <textarea
-                id="vehicle-csv-content"
-                name="csvContent"
-                rows="8"
-                placeholder="plateNumber,make,model,year,dailyRate,location&#10;DXB-9901,Toyota,Yaris,2024,52,Dubai Downtown"
-                required
-              ></textarea>
-            </label>
-            <label>
-              <input type="checkbox" name="skipDuplicates" checked />
-              Skip duplicate rows (plate/VIN)
-            </label>
-            <button type="submit">Import CSV</button>
-          </form>
-          <div id="csv-import-result" class="quote-result"></div>
-        </article>
-
-        <article class="card">
-          <h2>Upload Vehicle Documents</h2>
-          <form id="vehicle-document-form" class="stack">
-            <label>
-              Vehicle
-              <select name="vehicleId" id="document-vehicle-select" required></select>
-            </label>
-            <div class="grid-2">
-              <label>
-                Document Type
-                <select name="documentType">
-                  <option value="registration">registration</option>
-                  <option value="insurance">insurance</option>
-                  <option value="inspection">inspection</option>
-                  <option value="contract">contract</option>
-                  <option value="other">other</option>
-                </select>
-              </label>
-              <label>
-                Expiry Date
-                <input type="date" name="expiryDate" />
-              </label>
-            </div>
-            <label>
-              Document File (PDF/JPG/PNG/WEBP, max 10MB)
-              <input type="file" name="document" required />
-            </label>
-            <label>
-              Notes
-              <textarea name="notes" rows="2"></textarea>
-            </label>
-            <button type="submit">Upload Document</button>
-          </form>
-          <label class="stack">
-            View docs for vehicle
-            <select id="document-list-vehicle-select"></select>
-          </label>
-          <div id="vehicle-document-list" class="table-wrap"></div>
-        </article>
-      </section>
-
-      <section class="grid-2">
-        <article class="card">
-          <h2>Add Customer</h2>
-          <form id="customer-form" class="stack">
-            <div class="grid-2">
-              <label>
-                First Name
-                <input name="firstName" required />
-              </label>
-              <label>
-                Last Name
-                <input name="lastName" required />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Email
-                <input type="email" name="email" required />
-              </label>
-              <label>
-                Phone
-                <input name="phone" required />
-              </label>
-            </div>
-            <label>
-              License Number
-              <input name="licenseNumber" required />
-            </label>
-            <button type="submit">Add Customer</button>
-          </form>
-        </article>
-
-        <article class="card">
-          <h2>Maintenance Work Orders</h2>
-          <form id="work-order-form" class="stack">
-            <label>
-              Vehicle
-              <select name="vehicleId" id="work-order-vehicle" required></select>
-            </label>
-            <div class="grid-2">
-              <label>
-                Title
-                <input name="title" required />
-              </label>
-              <label>
-                Scheduled Date
-                <input type="date" name="scheduledDate" />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Priority
-                <select name="priority">
-                  <option value="low">low</option>
-                  <option value="medium">medium</option>
-                  <option value="high">high</option>
-                  <option value="critical">critical</option>
-                </select>
-              </label>
-              <label>
-                Status
-                <select name="status">
-                  <option value="open">open</option>
-                  <option value="in_progress">in_progress</option>
-                  <option value="on_hold">on_hold</option>
-                  <option value="completed">completed</option>
-                  <option value="cancelled">cancelled</option>
-                </select>
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Cost Estimate
-                <input type="number" name="costEstimate" min="0" step="0.01" />
-              </label>
-              <label>
-                Vendor Name
-                <input name="vendorName" />
-              </label>
-            </div>
-            <label>
-              Description
-              <textarea name="description" rows="2"></textarea>
-            </label>
-            <label>
-              Notes
-              <textarea name="notes" rows="2"></textarea>
-            </label>
-            <button type="submit">Create Work Order</button>
-          </form>
-        </article>
-      </section>
-
-      <section class="grid-2">
-        <article class="card">
-          <h2>Vehicles</h2>
-          <div id="vehicle-list" class="table-wrap"></div>
-        </article>
-        <article class="card">
-          <h2>Customers</h2>
-          <div id="customer-list" class="table-wrap"></div>
-        </article>
-      </section>
-
-      <section class="grid-2">
-        <article class="card">
-          <h2>Create Reservation</h2>
-          <form id="reservation-form" class="stack">
-            <label>
-              Customer
-              <select name="customerId" id="reservation-customer" required></select>
-            </label>
-            <label>
-              Vehicle
-              <select name="vehicleId" id="reservation-vehicle" required></select>
-            </label>
-            <div class="grid-2">
-              <label>
-                Start Date
-                <input type="date" name="startDate" required />
-              </label>
-              <label>
-                End Date
-                <input type="date" name="endDate" required />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Insurance
-                <select name="insuranceTier">
-                  <option value="basic">basic</option>
-                  <option value="plus">plus</option>
-                  <option value="premium">premium</option>
-                </select>
-              </label>
-              <label>
-                Status
-                <select name="status">
-                  <option value="pending">pending</option>
-                  <option value="confirmed">confirmed</option>
-                  <option value="active">active</option>
-                </select>
-              </label>
-            </div>
-            <fieldset>
-              <legend>Add-ons</legend>
-              <label><input type="checkbox" name="addOns" value="gps" /> GPS</label>
-              <label><input type="checkbox" name="addOns" value="childSeat" /> Child Seat</label>
-              <label><input type="checkbox" name="addOns" value="extraDriver" /> Extra Driver</label>
-            </fieldset>
-            <label>
-              Discount Code
-              <input name="discountCode" placeholder="WEEKLY10 or CORPORATE15" />
-            </label>
-            <label>
-              Notes
-              <textarea name="notes" rows="2"></textarea>
-            </label>
-            <button type="submit">Create Reservation</button>
-          </form>
-        </article>
-
-        <article class="card">
-          <h2>Quick Quote</h2>
-          <form id="quote-form" class="stack">
-            <label>
-              Vehicle
-              <select name="vehicleId" id="quote-vehicle"></select>
-            </label>
-            <div class="grid-2">
-              <label>
-                Start Date
-                <input type="date" name="startDate" required />
-              </label>
-              <label>
-                End Date
-                <input type="date" name="endDate" required />
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Insurance
-                <select name="insuranceTier">
-                  <option value="basic">basic</option>
-                  <option value="plus">plus</option>
-                  <option value="premium">premium</option>
-                </select>
-              </label>
-              <label>
-                Discount Code
-                <input name="discountCode" placeholder="Optional" />
-              </label>
-            </div>
-            <fieldset>
-              <legend>Add-ons</legend>
-              <label><input type="checkbox" name="addOns" value="gps" /> GPS</label>
-              <label><input type="checkbox" name="addOns" value="childSeat" /> Child Seat</label>
-              <label><input type="checkbox" name="addOns" value="extraDriver" /> Extra Driver</label>
-            </fieldset>
-            <button type="submit">Calculate Quote</button>
-          </form>
-          <div id="quote-result" class="quote-result"></div>
-        </article>
-      </section>
-
       <section class="card">
-        <h2>Maintenance Work Orders</h2>
-        <div id="work-order-list" class="table-wrap"></div>
+        <h2>Main Sections</h2>
+        <div class="quick-links">
+          <a class="quick-link" href="/fleet.html">
+            <h3>Fleet</h3>
+            <p>Add/edit vehicles and bulk import from CSV.</p>
+          </a>
+          <a class="quick-link" href="/customers.html">
+            <h3>Customers</h3>
+            <p>Register customers and manage customer records.</p>
+          </a>
+          <a class="quick-link" href="/reservations.html">
+            <h3>Reservations</h3>
+            <p>Create bookings, check pricing, and monitor trips.</p>
+          </a>
+          <a class="quick-link" href="/maintenance.html">
+            <h3>Maintenance & Documents</h3>
+            <p>Upload compliance docs and track work orders.</p>
+          </a>
+        </div>
       </section>
 
-      <section class="card">
-        <h2>Reservations</h2>
-        <div id="reservation-list" class="table-wrap"></div>
+      <section class="grid-2">
+        <article class="card">
+          <h2>Upcoming Pickups</h2>
+          <div id="upcoming-pickups" class="table-wrap"></div>
+        </article>
+        <article class="card">
+          <h2>Open Work Orders</h2>
+          <div id="open-work-orders" class="table-wrap"></div>
+        </article>
       </section>
 
       <div id="toast" class="toast hidden" aria-live="polite"></div>
     </main>
 
-    <script src="/app.js"></script>
+    <script src="/common.js"></script>
+    <script src="/home.js"></script>
   </body>
 </html>
