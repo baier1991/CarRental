@@ -1,8 +1,8 @@
 const APP_ROLE_KEY = "car_rental_role";
 const ROLE_TO_ALLOWED_PAGES = {
   admin: new Set(["home", "fleet", "customers", "reservations", "maintenance"]),
-  operations: new Set(["home", "fleet", "reservations", "maintenance"]),
-  agent: new Set(["home", "customers", "reservations"]),
+  operations: new Set(["home", "fleet", "customers", "reservations", "maintenance"]),
+  agent: new Set(["home", "fleet", "customers", "reservations"]),
 };
 
 function showToast(message, isError = false) {

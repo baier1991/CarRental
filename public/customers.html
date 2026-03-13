@@ -21,8 +21,8 @@
         </label>
         <nav class="sidebar-menu">
           <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
-          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations">Fleet</a>
-          <a href="/customers.html" data-page="customers" data-roles="admin,agent">Customers</a>
+          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations,agent">Fleet</a>
+          <a href="/customers.html" data-page="customers" data-roles="admin,operations,agent">Customers</a>
           <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
           <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
         </nav>
@@ -50,6 +50,7 @@
             <label>License Number <input name="licenseNumber" required /></label>
                 <button type="submit">Add Customer</button>
               </form>
+              <div id="customer-form-message" class="soft-box"></div>
             </article>
 
             <article class="card">

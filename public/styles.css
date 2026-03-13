@@ -286,6 +286,11 @@ small {
   background: #f8fafc;
 }
 
+.error-text {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .quick-links {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

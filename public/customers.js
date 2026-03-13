@@ -5,6 +5,17 @@ const state = {
   reservations: [],
 };
 
+function setFormMessage(message, isError = false) {
+  const container = document.getElementById("customer-form-message");
+  if (!container) {
+    return;
+  }
+  const safeMessage = message || "";
+  container.innerHTML = safeMessage
+    ? `<span class="${isError ? "error-text" : ""}">${safeMessage}</span>`
+    : "";
+}
+
 function renderCustomerList() {
   const container = document.getElementById("customer-list");
   if (state.customers.length === 0) {
@@ -62,10 +73,14 @@ function renderMetrics() {
 }
 
 async function loadCustomers() {
-  const [customers, reservations] = await Promise.all([
-    request("/api/customers"),
-    request("/api/reservations"),
-  ]);
+  const customers = await request("/api/customers");
+  let reservations = [];
+  try {
+    reservations = await request("/api/reservations");
+  } catch (_error) {
+    // Do not block customer data rendering if reservation endpoint fails.
+    reservations = [];
+  }
   state.customers = customers;
   state.reservations = reservations;
   renderCustomerList();
@@ -83,10 +98,15 @@ function attachHandlers() {
         body: JSON.stringify(payload),
       });
       showToast("Customer added.");
+      setFormMessage("Customer saved successfully.");
       form.reset();
       await loadCustomers();
     } catch (error) {
       showToast(error.message, true);
+      setFormMessage(
+        `${error.message} (Tip: email must be unique for each customer.)`,
+        true
+      );
     }
   });
 }
