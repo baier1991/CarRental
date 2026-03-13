@@ -67,6 +67,8 @@ function renderDashboard() {
     { label: "Active Customers", value: state.dashboard.activeCustomers },
     { label: "Utilization", value: `${state.dashboard.utilizationRate}%` },
     { label: "Expected Revenue", value: formatMoney(state.dashboard.expectedRevenue) },
+    { label: "Vehicles Needing Attention", value: state.dashboard.vehiclesNeedingAttention || 0 },
+    { label: "Critical Fleet Alerts", value: state.dashboard.criticalVehicleAlerts || 0 },
   ];
 
   ui.dashboardMetrics.innerHTML = metricCards
@@ -93,10 +95,11 @@ function renderVehicles() {
         <tr>
           <th>Plate</th>
           <th>Vehicle</th>
-          <th>Year</th>
+          <th>Category</th>
           <th>Rate</th>
           <th>Status</th>
-          <th>Location</th>
+          <th>Branch</th>
+          <th>Compliance</th>
         </tr>
       </thead>
       <tbody>
@@ -105,11 +108,19 @@ function renderVehicles() {
             (vehicle) => `
             <tr>
               <td>${vehicle.plateNumber}</td>
-              <td>${vehicle.make} ${vehicle.model}</td>
-              <td>${vehicle.year}</td>
-              <td>${formatMoney(vehicle.dailyRate)}/day</td>
+              <td>${vehicle.year} ${vehicle.make} ${vehicle.model}</td>
+              <td>${vehicle.category || "n/a"}</td>
+              <td>
+                ${formatMoney(vehicle.dailyRate)}/day
+                ${vehicle.weekendDailyRate ? `<br /><small>Weekend: ${formatMoney(vehicle.weekendDailyRate)}</small>` : ""}
+              </td>
               <td><span class="badge">${vehicle.status}</span></td>
-              <td>${vehicle.location}</td>
+              <td>${vehicle.branchCode || "n/a"}<br /><small>${vehicle.location}</small></td>
+              <td>
+                ${vehicle.registrationExpiryDate ? `Reg: ${vehicle.registrationExpiryDate}<br />` : ""}
+                ${vehicle.insuranceExpiryDate ? `Ins: ${vehicle.insuranceExpiryDate}<br />` : ""}
+                ${vehicle.nextServiceDate ? `Service: ${vehicle.nextServiceDate}` : ""}
+              </td>
             </tr>
           `
           )
@@ -253,6 +264,7 @@ function attachFormHandlers() {
     event.preventDefault();
     const formData = new FormData(vehicleForm);
     const payload = Object.fromEntries(formData.entries());
+    payload.features = collectCheckedValues(vehicleForm, "features");
 
     try {
       await request("/api/vehicles", {

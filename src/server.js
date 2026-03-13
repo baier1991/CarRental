@@ -9,11 +9,18 @@ const {
   isDateRangeValid,
   ACTIVE_RESERVATION_STATUSES,
 } = require("./domain/reservations");
+const {
+  VEHICLE_STATUSES,
+  VEHICLE_CATEGORIES,
+  OWNERSHIP_TYPES,
+  VEHICLE_FEATURE_KEYS,
+  normalizeVehicleInput,
+  getVehicleAlerts,
+} = require("./domain/vehicles");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-const VEHICLE_STATUSES = new Set(["available", "maintenance", "inactive"]);
 const RESERVATION_STATUSES = new Set([
   "pending",
   "confirmed",
@@ -89,6 +96,29 @@ function calculateDashboard(store) {
     .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
     .slice(0, 5);
 
+  const vehicleAlertSummary = store.vehicles.reduce(
+    (acc, vehicle) => {
+      const alerts = getVehicleAlerts(vehicle);
+      if (alerts.length) {
+        acc.vehiclesNeedingAttention += 1;
+      }
+
+      for (const alert of alerts) {
+        if (alert.type === "critical") {
+          acc.criticalVehicleAlerts += 1;
+        } else {
+          acc.warningVehicleAlerts += 1;
+        }
+      }
+      return acc;
+    },
+    {
+      vehiclesNeedingAttention: 0,
+      criticalVehicleAlerts: 0,
+      warningVehicleAlerts: 0,
+    }
+  );
+
   return {
     fleetSize: store.vehicles.length,
     availableVehicles: store.vehicles.filter((vehicle) => vehicle.status === "available").length,
@@ -99,6 +129,7 @@ function calculateDashboard(store) {
         ? 0
         : Number(((activeVehicleIds.size / store.vehicles.length) * 100).toFixed(1)),
     expectedRevenue: Number(expectedRevenue.toFixed(2)),
+    ...vehicleAlertSummary,
     upcomingPickups,
   };
 }
@@ -110,6 +141,9 @@ app.get("/api/health", (_req, res) => {
 app.get("/api/config", (_req, res) => {
   return res.json({
     vehicleStatuses: Array.from(VEHICLE_STATUSES),
+    vehicleCategories: Array.from(VEHICLE_CATEGORIES),
+    ownershipTypes: Array.from(OWNERSHIP_TYPES),
+    vehicleFeatures: Array.from(VEHICLE_FEATURE_KEYS),
     reservationStatuses: Array.from(RESERVATION_STATUSES),
     insuranceTiers: Object.keys(INSURANCE_DAILY_RATE),
     addOns: Object.entries(ADD_ON_DAILY_RATE).map(([key, dailyRate]) => ({ key, dailyRate })),
@@ -124,56 +158,48 @@ app.get("/api/dashboard", (_req, res) => {
 app.get("/api/vehicles", (req, res) => {
   const store = readStore();
   const statusFilter = req.query.status ? String(req.query.status).trim().toLowerCase() : null;
-  const vehicles = statusFilter
-    ? store.vehicles.filter((vehicle) => vehicle.status === statusFilter)
-    : store.vehicles;
+  const categoryFilter = req.query.category ? String(req.query.category).trim().toLowerCase() : null;
+  const branchFilter = req.query.branch ? String(req.query.branch).trim().toUpperCase() : null;
+  const vehicles = store.vehicles.filter((vehicle) => {
+    if (statusFilter && vehicle.status !== statusFilter) {
+      return false;
+    }
+    if (categoryFilter && String(vehicle.category || "").toLowerCase() !== categoryFilter) {
+      return false;
+    }
+    if (branchFilter && String(vehicle.branchCode || "").toUpperCase() !== branchFilter) {
+      return false;
+    }
+    return true;
+  });
   return res.json(vehicles);
 });
 
 app.post("/api/vehicles", (req, res) => {
-  const { plateNumber, make, model, year, dailyRate, location, transmission, fuelType } = req.body;
-  const status = normalizeVehicleStatus(req.body.status);
-
-  if (!plateNumber || !make || !model || !year || !dailyRate || !location) {
-    return sendValidationError(
-      res,
-      "plateNumber, make, model, year, dailyRate, and location are required."
-    );
-  }
-
-  if (!status) {
-    return sendValidationError(res, "Invalid vehicle status.");
-  }
-
-  const parsedDailyRate = Number(dailyRate);
-  const parsedYear = Number(year);
-  if (Number.isNaN(parsedDailyRate) || parsedDailyRate <= 0) {
-    return sendValidationError(res, "dailyRate must be a positive number.");
-  }
-
-  if (Number.isNaN(parsedYear) || parsedYear < 1990 || parsedYear > 2100) {
-    return sendValidationError(res, "year must be a valid 4-digit number.");
+  const { errors, normalizedVehicle } = normalizeVehicleInput(req.body);
+  if (errors.length > 0) {
+    return res.status(400).json({ error: errors[0], details: errors });
   }
 
   const store = readStore();
   const duplicatePlate = store.vehicles.some(
-    (vehicle) => vehicle.plateNumber.toLowerCase() === String(plateNumber).toLowerCase()
+    (vehicle) =>
+      String(vehicle.plateNumber || "").toUpperCase() === String(normalizedVehicle.plateNumber).toUpperCase()
   );
   if (duplicatePlate) {
     return res.status(409).json({ error: "A vehicle with this plate number already exists." });
   }
 
+  const duplicateVin =
+    normalizedVehicle.vin &&
+    store.vehicles.some((vehicle) => String(vehicle.vin || "").toUpperCase() === normalizedVehicle.vin);
+  if (duplicateVin) {
+    return res.status(409).json({ error: "A vehicle with this VIN already exists." });
+  }
+
   const vehicle = {
     id: randomUUID(),
-    plateNumber: String(plateNumber).trim().toUpperCase(),
-    make: String(make).trim(),
-    model: String(model).trim(),
-    year: parsedYear,
-    dailyRate: parsedDailyRate,
-    status,
-    location: String(location).trim(),
-    transmission: transmission ? String(transmission).trim() : null,
-    fuelType: fuelType ? String(fuelType).trim() : null,
+    ...normalizedVehicle,
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };

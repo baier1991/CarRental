@@ -8,6 +8,7 @@ A starter product for rental car companies to manage fleet, customers, reservati
 - **Frontend dashboard** (plain HTML/CSS/JS) served by the backend
 - **Pricing engine** with insurance tiers, add-ons, discount codes, and tax
 - **Reservation conflict checks** to prevent overlapping active bookings
+- **Advanced vehicle intake** with VIN, category, branch, compliance dates, service schedule, and rate plans
 - **Seed data** for quick local demo
 
 ## Quick start
