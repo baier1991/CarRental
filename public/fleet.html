@@ -6,30 +6,39 @@
     <title>Car Rental OS - Fleet</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <nav class="top-nav">
-      <div class="container nav-inner">
-        <a class="brand" href="/">Car Rental OS</a>
-        <div class="menu">
-          <a href="/">Home</a>
-          <a href="/fleet.html" class="active">Fleet</a>
-          <a href="/customers.html">Customers</a>
-          <a href="/reservations.html">Reservations</a>
-          <a href="/maintenance.html">Maintenance</a>
-        </div>
-      </div>
-    </nav>
+  <body data-page="fleet">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">Car Rental OS</a>
+        <p class="sidebar-subtitle">Rental operations platform</p>
+        <label class="role-label">
+          Signed in as
+          <select id="role-select">
+            <option value="admin">Admin</option>
+            <option value="operations">Operations</option>
+            <option value="agent">Rental Agent</option>
+          </select>
+        </label>
+        <nav class="sidebar-menu">
+          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
+          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations">Fleet</a>
+          <a href="/customers.html" data-page="customers" data-roles="admin,agent">Customers</a>
+          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+        </nav>
+      </aside>
 
-    <header class="container page-header">
-      <h1>Fleet Management</h1>
-      <p class="subtitle">Vehicle onboarding, editing, pricing strategy, and fleet visibility.</p>
-    </header>
+      <div class="app-main">
+        <header class="container page-header">
+          <h1>Fleet Management</h1>
+          <p class="subtitle">Vehicle onboarding, editing, pricing strategy, and fleet visibility.</p>
+        </header>
 
-    <main class="container">
-      <section class="grid-2">
-        <article class="card">
-          <h2>Add Vehicle</h2>
-          <form id="vehicle-form" class="stack">
+        <main class="container">
+          <section class="grid-2" data-visible-for="admin,operations">
+            <article class="card">
+              <h2>Add Vehicle</h2>
+              <form id="vehicle-form" class="stack">
             <div class="grid-2">
               <label>Plate Number <input name="plateNumber" required /></label>
               <label>VIN (17 chars) <input name="vin" maxlength="17" minlength="17" /></label>
@@ -131,13 +140,13 @@
               <label><input type="checkbox" name="features" value="tollTag" /> Toll Tag</label>
             </fieldset>
             <label>Notes <textarea name="notes" rows="2"></textarea></label>
-            <button type="submit">Add Vehicle</button>
-          </form>
-        </article>
+                <button type="submit">Add Vehicle</button>
+              </form>
+            </article>
 
-        <article class="card">
-          <h2>Edit Vehicle</h2>
-          <form id="edit-vehicle-form" class="stack">
+            <article class="card">
+              <h2>Edit Vehicle</h2>
+              <form id="edit-vehicle-form" class="stack">
             <label>Vehicle <select id="edit-vehicle-select" name="vehicleId" required></select></label>
             <div class="grid-2">
               <label>Daily Rate <input type="number" name="dailyRate" step="0.01" /></label>
@@ -188,14 +197,14 @@
               <label><input type="checkbox" name="editFeatures" value="tollTag" /> Toll Tag</label>
             </fieldset>
             <label>Notes <textarea name="notes" rows="2"></textarea></label>
-            <button type="submit">Save Vehicle Changes</button>
-          </form>
-        </article>
-      </section>
+                <button type="submit">Save Vehicle Changes</button>
+              </form>
+            </article>
+          </section>
 
-      <section class="card">
-        <h2>Bulk Vehicle CSV Import</h2>
-        <form id="vehicle-csv-form" class="stack">
+          <section class="card" data-visible-for="admin,operations">
+            <h2>Bulk Vehicle CSV Import</h2>
+            <form id="vehicle-csv-form" class="stack">
           <label>CSV File <input type="file" id="vehicle-csv-file" accept=".csv,text/csv" /></label>
           <div class="grid-2">
             <label>Default Location <input name="defaultLocation" placeholder="Optional fallback" /></label>
@@ -212,18 +221,20 @@
             ></textarea>
           </label>
           <label><input type="checkbox" name="skipDuplicates" checked /> Skip duplicate rows (plate/VIN)</label>
-          <button type="submit">Import CSV</button>
-        </form>
-        <div id="csv-import-result" class="soft-box"></div>
-      </section>
+              <button type="submit">Import CSV</button>
+            </form>
+            <div id="csv-import-result" class="soft-box"></div>
+          </section>
 
-      <section class="card">
-        <h2>Fleet List</h2>
-        <div id="vehicle-list" class="table-wrap"></div>
-      </section>
+          <section class="card">
+            <h2>Fleet List</h2>
+            <div id="vehicle-list" class="table-wrap"></div>
+          </section>
 
-      <div id="toast" class="toast hidden" aria-live="polite"></div>
-    </main>
+          <div id="toast" class="toast hidden" aria-live="polite"></div>
+        </main>
+      </div>
+    </div>
 
     <script src="/common.js"></script>
     <script src="/fleet.js"></script>

@@ -6,30 +6,39 @@
     <title>Car Rental OS - Customers</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <nav class="top-nav">
-      <div class="container nav-inner">
-        <a class="brand" href="/">Car Rental OS</a>
-        <div class="menu">
-          <a href="/">Home</a>
-          <a href="/fleet.html">Fleet</a>
-          <a href="/customers.html" class="active">Customers</a>
-          <a href="/reservations.html">Reservations</a>
-          <a href="/maintenance.html">Maintenance</a>
-        </div>
-      </div>
-    </nav>
+  <body data-page="customers">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">Car Rental OS</a>
+        <p class="sidebar-subtitle">Rental operations platform</p>
+        <label class="role-label">
+          Signed in as
+          <select id="role-select">
+            <option value="admin">Admin</option>
+            <option value="operations">Operations</option>
+            <option value="agent">Rental Agent</option>
+          </select>
+        </label>
+        <nav class="sidebar-menu">
+          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
+          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations">Fleet</a>
+          <a href="/customers.html" data-page="customers" data-roles="admin,agent">Customers</a>
+          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+        </nav>
+      </aside>
 
-    <header class="container page-header">
-      <h1>Customer Management</h1>
-      <p class="subtitle">Register customers and keep license/contact records organized.</p>
-    </header>
+      <div class="app-main">
+        <header class="container page-header">
+          <h1>Customer Management</h1>
+          <p class="subtitle">Register customers and keep license/contact records organized.</p>
+        </header>
 
-    <main class="container">
-      <section class="grid-2">
-        <article class="card">
-          <h2>Add Customer</h2>
-          <form id="customer-form" class="stack">
+        <main class="container">
+          <section class="grid-2">
+            <article class="card">
+              <h2>Add Customer</h2>
+              <form id="customer-form" class="stack">
             <div class="grid-2">
               <label>First Name <input name="firstName" required /></label>
               <label>Last Name <input name="lastName" required /></label>
@@ -39,23 +48,25 @@
               <label>Phone <input name="phone" required /></label>
             </div>
             <label>License Number <input name="licenseNumber" required /></label>
-            <button type="submit">Add Customer</button>
-          </form>
-        </article>
+                <button type="submit">Add Customer</button>
+              </form>
+            </article>
 
-        <article class="card">
-          <h2>Overview</h2>
-          <div id="customer-metrics" class="metrics-grid"></div>
-        </article>
-      </section>
+            <article class="card">
+              <h2>Overview</h2>
+              <div id="customer-metrics" class="metrics-grid"></div>
+            </article>
+          </section>
 
-      <section class="card">
-        <h2>Customer List</h2>
-        <div id="customer-list" class="table-wrap"></div>
-      </section>
+          <section class="card">
+            <h2>Customer List</h2>
+            <div id="customer-list" class="table-wrap"></div>
+          </section>
 
-      <div id="toast" class="toast hidden" aria-live="polite"></div>
-    </main>
+          <div id="toast" class="toast hidden" aria-live="polite"></div>
+        </main>
+      </div>
+    </div>
 
     <script src="/common.js"></script>
     <script src="/customers.js"></script>

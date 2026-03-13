@@ -6,30 +6,39 @@
     <title>Car Rental OS - Maintenance</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <nav class="top-nav">
-      <div class="container nav-inner">
-        <a class="brand" href="/">Car Rental OS</a>
-        <div class="menu">
-          <a href="/">Home</a>
-          <a href="/fleet.html">Fleet</a>
-          <a href="/customers.html">Customers</a>
-          <a href="/reservations.html">Reservations</a>
-          <a href="/maintenance.html" class="active">Maintenance</a>
-        </div>
-      </div>
-    </nav>
+  <body data-page="maintenance">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">Car Rental OS</a>
+        <p class="sidebar-subtitle">Rental operations platform</p>
+        <label class="role-label">
+          Signed in as
+          <select id="role-select">
+            <option value="admin">Admin</option>
+            <option value="operations">Operations</option>
+            <option value="agent">Rental Agent</option>
+          </select>
+        </label>
+        <nav class="sidebar-menu">
+          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
+          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations">Fleet</a>
+          <a href="/customers.html" data-page="customers" data-roles="admin,agent">Customers</a>
+          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+        </nav>
+      </aside>
 
-    <header class="container page-header">
-      <h1>Maintenance & Compliance</h1>
-      <p class="subtitle">Manage vehicle documents and maintenance work orders in one place.</p>
-    </header>
+      <div class="app-main">
+        <header class="container page-header">
+          <h1>Maintenance & Compliance</h1>
+          <p class="subtitle">Manage vehicle documents and maintenance work orders in one place.</p>
+        </header>
 
-    <main class="container">
-      <section class="grid-2">
-        <article class="card">
-          <h2>Upload Vehicle Documents</h2>
-          <form id="vehicle-document-form" class="stack">
+        <main class="container">
+          <section class="grid-2">
+            <article class="card">
+              <h2>Upload Vehicle Documents</h2>
+              <form id="vehicle-document-form" class="stack">
             <label>Vehicle <select name="vehicleId" id="document-vehicle-select" required></select></label>
             <div class="grid-2">
               <label>
@@ -46,13 +55,13 @@
             </div>
             <label>Document File (PDF/JPG/PNG/WEBP, max 10MB) <input type="file" name="document" required /></label>
             <label>Notes <textarea name="notes" rows="2"></textarea></label>
-            <button type="submit">Upload Document</button>
-          </form>
-        </article>
+                <button type="submit">Upload Document</button>
+              </form>
+            </article>
 
-        <article class="card">
-          <h2>Create Work Order</h2>
-          <form id="work-order-form" class="stack">
+            <article class="card">
+              <h2>Create Work Order</h2>
+              <form id="work-order-form" class="stack">
             <label>Vehicle <select name="vehicleId" id="work-order-vehicle" required></select></label>
             <div class="grid-2">
               <label>Title <input name="title" required /></label>
@@ -85,29 +94,31 @@
             </div>
             <label>Description <textarea name="description" rows="2"></textarea></label>
             <label>Notes <textarea name="notes" rows="2"></textarea></label>
-            <button type="submit">Create Work Order</button>
-          </form>
-        </article>
-      </section>
+                <button type="submit">Create Work Order</button>
+              </form>
+            </article>
+          </section>
 
-      <section class="grid-2">
-        <article class="card">
-          <h2>Document Library</h2>
-          <label class="stack">
-            View docs for vehicle
-            <select id="document-list-vehicle-select"></select>
-          </label>
-          <div id="vehicle-document-list" class="table-wrap"></div>
-        </article>
+          <section class="grid-2">
+            <article class="card">
+              <h2>Document Library</h2>
+              <label class="stack">
+                View docs for vehicle
+                <select id="document-list-vehicle-select"></select>
+              </label>
+              <div id="vehicle-document-list" class="table-wrap"></div>
+            </article>
 
-        <article class="card">
-          <h2>Work Orders</h2>
-          <div id="work-order-list" class="table-wrap"></div>
-        </article>
-      </section>
+            <article class="card">
+              <h2>Work Orders</h2>
+              <div id="work-order-list" class="table-wrap"></div>
+            </article>
+          </section>
 
-      <div id="toast" class="toast hidden" aria-live="polite"></div>
-    </main>
+          <div id="toast" class="toast hidden" aria-live="polite"></div>
+        </main>
+      </div>
+    </div>
 
     <script src="/common.js"></script>
     <script src="/maintenance.js"></script>

@@ -14,6 +14,78 @@ body {
   margin: 0 auto;
 }
 
+.app-shell {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #0f172a;
+  color: #dbeafe;
+  padding: 1rem 0.8rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #1e293b;
+}
+
+.sidebar-brand {
+  display: block;
+  text-decoration: none;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.sidebar-subtitle {
+  margin: 0 0 1rem;
+  color: #bfdbfe;
+  font-size: 0.86rem;
+}
+
+.role-label {
+  color: #bfdbfe;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.role-label select {
+  margin-top: 0.25rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.sidebar-menu {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sidebar-menu a {
+  text-decoration: none;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 0.52rem 0.65rem;
+  border: 1px solid transparent;
+}
+
+.sidebar-menu a:hover {
+  background: #172554;
+}
+
+.sidebar-menu a.active {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+.app-main {
+  min-width: 0;
+}
+
 .top-nav {
   border-bottom: 1px solid #dbe2ef;
   background: #ffffff;
@@ -264,7 +336,26 @@ small {
   display: none;
 }
 
+.role-hidden {
+  display: none !important;
+}
+
 @media (max-width: 960px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .sidebar-menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .grid-2,
   .grid-3 {
     grid-template-columns: 1fr;

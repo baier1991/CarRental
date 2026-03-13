@@ -6,66 +6,77 @@
     <title>Car Rental OS - Home</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <nav class="top-nav">
-      <div class="container nav-inner">
-        <a class="brand" href="/">Car Rental OS</a>
-        <div class="menu">
-          <a href="/" class="active">Home</a>
-          <a href="/fleet.html">Fleet</a>
-          <a href="/customers.html">Customers</a>
-          <a href="/reservations.html">Reservations</a>
-          <a href="/maintenance.html">Maintenance</a>
-        </div>
+  <body data-page="home">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">Car Rental OS</a>
+        <p class="sidebar-subtitle">Rental operations platform</p>
+        <label class="role-label">
+          Signed in as
+          <select id="role-select">
+            <option value="admin">Admin</option>
+            <option value="operations">Operations</option>
+            <option value="agent">Rental Agent</option>
+          </select>
+        </label>
+        <nav class="sidebar-menu">
+          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
+          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations">Fleet</a>
+          <a href="/customers.html" data-page="customers" data-roles="admin,agent">Customers</a>
+          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+        </nav>
+      </aside>
+
+      <div class="app-main">
+        <header class="container page-header">
+          <h1>Operations Home</h1>
+          <p class="subtitle">Clear navigation with pages tailored by role.</p>
+        </header>
+
+        <main class="container">
+          <section class="card">
+            <h2>Business Snapshot</h2>
+            <div id="dashboard-metrics" class="metrics-grid"></div>
+          </section>
+
+          <section class="card">
+            <h2>Main Sections</h2>
+            <div class="quick-links">
+              <a class="quick-link" href="/fleet.html" data-roles="admin,operations">
+                <h3>Fleet</h3>
+                <p>Add/edit vehicles and bulk import from CSV.</p>
+              </a>
+              <a class="quick-link" href="/customers.html" data-roles="admin,agent">
+                <h3>Customers</h3>
+                <p>Register customers and manage customer records.</p>
+              </a>
+              <a class="quick-link" href="/reservations.html" data-roles="admin,operations,agent">
+                <h3>Reservations</h3>
+                <p>Create bookings, check pricing, and monitor trips.</p>
+              </a>
+              <a class="quick-link" href="/maintenance.html" data-roles="admin,operations">
+                <h3>Maintenance & Documents</h3>
+                <p>Upload compliance docs and track work orders.</p>
+              </a>
+            </div>
+          </section>
+
+          <section class="grid-2">
+            <article class="card">
+              <h2>Upcoming Pickups</h2>
+              <div id="upcoming-pickups" class="table-wrap"></div>
+            </article>
+            <article class="card">
+              <h2>Open Work Orders</h2>
+              <div id="open-work-orders" class="table-wrap"></div>
+            </article>
+          </section>
+
+          <div id="toast" class="toast hidden" aria-live="polite"></div>
+        </main>
       </div>
-    </nav>
-
-    <header class="container page-header">
-      <h1>Operations Home</h1>
-      <p class="subtitle">Clear navigation and separated workflows for rental operations teams.</p>
-    </header>
-
-    <main class="container">
-      <section class="card">
-        <h2>Business Snapshot</h2>
-        <div id="dashboard-metrics" class="metrics-grid"></div>
-      </section>
-
-      <section class="card">
-        <h2>Main Sections</h2>
-        <div class="quick-links">
-          <a class="quick-link" href="/fleet.html">
-            <h3>Fleet</h3>
-            <p>Add/edit vehicles and bulk import from CSV.</p>
-          </a>
-          <a class="quick-link" href="/customers.html">
-            <h3>Customers</h3>
-            <p>Register customers and manage customer records.</p>
-          </a>
-          <a class="quick-link" href="/reservations.html">
-            <h3>Reservations</h3>
-            <p>Create bookings, check pricing, and monitor trips.</p>
-          </a>
-          <a class="quick-link" href="/maintenance.html">
-            <h3>Maintenance & Documents</h3>
-            <p>Upload compliance docs and track work orders.</p>
-          </a>
-        </div>
-      </section>
-
-      <section class="grid-2">
-        <article class="card">
-          <h2>Upcoming Pickups</h2>
-          <div id="upcoming-pickups" class="table-wrap"></div>
-        </article>
-        <article class="card">
-          <h2>Open Work Orders</h2>
-          <div id="open-work-orders" class="table-wrap"></div>
-        </article>
-      </section>
-
-      <div id="toast" class="toast hidden" aria-live="polite"></div>
-    </main>
+    </div>
 
     <script src="/common.js"></script>
     <script src="/home.js"></script>

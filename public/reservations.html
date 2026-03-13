@@ -6,30 +6,39 @@
     <title>Car Rental OS - Reservations</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <nav class="top-nav">
-      <div class="container nav-inner">
-        <a class="brand" href="/">Car Rental OS</a>
-        <div class="menu">
-          <a href="/">Home</a>
-          <a href="/fleet.html">Fleet</a>
-          <a href="/customers.html">Customers</a>
-          <a href="/reservations.html" class="active">Reservations</a>
-          <a href="/maintenance.html">Maintenance</a>
-        </div>
-      </div>
-    </nav>
+  <body data-page="reservations">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">Car Rental OS</a>
+        <p class="sidebar-subtitle">Rental operations platform</p>
+        <label class="role-label">
+          Signed in as
+          <select id="role-select">
+            <option value="admin">Admin</option>
+            <option value="operations">Operations</option>
+            <option value="agent">Rental Agent</option>
+          </select>
+        </label>
+        <nav class="sidebar-menu">
+          <a href="/" data-page="home" data-roles="admin,operations,agent">Home</a>
+          <a href="/fleet.html" data-page="fleet" data-roles="admin,operations">Fleet</a>
+          <a href="/customers.html" data-page="customers" data-roles="admin,agent">Customers</a>
+          <a href="/reservations.html" data-page="reservations" data-roles="admin,operations,agent">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance" data-roles="admin,operations">Maintenance</a>
+        </nav>
+      </aside>
 
-    <header class="container page-header">
-      <h1>Reservations & Pricing</h1>
-      <p class="subtitle">Create bookings, calculate quotes, and monitor reservation pipeline.</p>
-    </header>
+      <div class="app-main">
+        <header class="container page-header">
+          <h1>Reservations & Pricing</h1>
+          <p class="subtitle">Create bookings, calculate quotes, and monitor reservation pipeline.</p>
+        </header>
 
-    <main class="container">
-      <section class="grid-2">
-        <article class="card">
-          <h2>Create Reservation</h2>
-          <form id="reservation-form" class="stack">
+        <main class="container">
+          <section class="grid-2">
+            <article class="card">
+              <h2>Create Reservation</h2>
+              <form id="reservation-form" class="stack">
             <label>Customer <select name="customerId" id="reservation-customer" required></select></label>
             <label>Vehicle <select name="vehicleId" id="reservation-vehicle" required></select></label>
             <div class="grid-2">
@@ -62,13 +71,13 @@
             </fieldset>
             <label>Discount Code <input name="discountCode" placeholder="WEEKLY10 or CORPORATE15" /></label>
             <label>Notes <textarea name="notes" rows="2"></textarea></label>
-            <button type="submit">Create Reservation</button>
-          </form>
-        </article>
+                <button type="submit">Create Reservation</button>
+              </form>
+            </article>
 
-        <article class="card">
-          <h2>Quick Quote</h2>
-          <form id="quote-form" class="stack">
+            <article class="card">
+              <h2>Quick Quote</h2>
+              <form id="quote-form" class="stack">
             <label>Vehicle <select name="vehicleId" id="quote-vehicle"></select></label>
             <div class="grid-2">
               <label>Start Date <input type="date" name="startDate" required /></label>
@@ -91,19 +100,21 @@
               <label><input type="checkbox" name="addOns" value="childSeat" /> Child Seat</label>
               <label><input type="checkbox" name="addOns" value="extraDriver" /> Extra Driver</label>
             </fieldset>
-            <button type="submit">Calculate Quote</button>
-          </form>
-          <div id="quote-result" class="soft-box"></div>
-        </article>
-      </section>
+                <button type="submit">Calculate Quote</button>
+              </form>
+              <div id="quote-result" class="soft-box"></div>
+            </article>
+          </section>
 
-      <section class="card">
-        <h2>Reservations</h2>
-        <div id="reservation-list" class="table-wrap"></div>
-      </section>
+          <section class="card">
+            <h2>Reservations</h2>
+            <div id="reservation-list" class="table-wrap"></div>
+          </section>
 
-      <div id="toast" class="toast hidden" aria-live="polite"></div>
-    </main>
+          <div id="toast" class="toast hidden" aria-live="polite"></div>
+        </main>
+      </div>
+    </div>
 
     <script src="/common.js"></script>
     <script src="/reservations.js"></script>
