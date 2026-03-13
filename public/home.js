@@ -109,6 +109,19 @@ function renderOpenWorkOrders(workOrders, vehicles) {
 
 async function bootstrap() {
   try {
+    const restoreButton = document.getElementById("restore-demo-data-btn");
+    if (restoreButton) {
+      restoreButton.addEventListener("click", async () => {
+        try {
+          await request("/api/admin/seed-demo", { method: "POST" });
+          showToast("Demo data restored.");
+          window.location.reload();
+        } catch (error) {
+          showToast(error.message, true);
+        }
+      });
+    }
+
     const [dashboard, vehicles, customers, workOrders] = await Promise.all([
       request("/api/dashboard"),
       request("/api/vehicles"),

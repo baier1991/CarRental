@@ -1,0 +1,185 @@
+{
+  "vehicles": [
+    {
+      "id": "veh-001",
+      "plateNumber": "DXB-1024",
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2024,
+      "category": "economy",
+      "dailyRate": 55,
+      "weekendDailyRate": 62,
+      "weeklyRate": 330,
+      "monthlyRate": 1200,
+      "securityDeposit": 500,
+      "status": "available",
+      "location": "Dubai Downtown",
+      "branchCode": "DXB-01",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "odometerKm": 41450,
+      "mileageLimitPerDay": 250,
+      "extraKmRate": 0.35,
+      "registrationExpiryDate": "2026-03-05",
+      "insuranceExpiryDate": "2026-04-10",
+      "inspectionDueDate": "2026-03-01",
+      "nextServiceAtKm": 45000,
+      "nextServiceDate": "2026-03-02",
+      "ownershipType": "owned",
+      "features": [
+        "bluetooth",
+        "backupCamera",
+        "tollTag"
+      ],
+      "createdAt": "2026-01-08T10:00:00.000Z",
+      "updatedAt": "2026-01-08T10:00:00.000Z"
+    },
+    {
+      "id": "veh-002",
+      "plateNumber": "DXB-7761",
+      "make": "Hyundai",
+      "model": "Creta",
+      "year": 2025,
+      "category": "suv",
+      "dailyRate": 74,
+      "weekendDailyRate": 82,
+      "weeklyRate": 460,
+      "monthlyRate": 1550,
+      "securityDeposit": 700,
+      "status": "available",
+      "location": "Dubai Marina",
+      "branchCode": "DXB-02",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "odometerKm": 19300,
+      "mileageLimitPerDay": 280,
+      "extraKmRate": 0.4,
+      "registrationExpiryDate": "2026-08-01",
+      "insuranceExpiryDate": "2026-06-10",
+      "inspectionDueDate": "2026-09-01",
+      "nextServiceAtKm": 25000,
+      "nextServiceDate": "2026-05-01",
+      "ownershipType": "leased",
+      "features": [
+        "appleCarPlay",
+        "androidAuto",
+        "parkingSensors"
+      ],
+      "createdAt": "2026-01-10T10:00:00.000Z",
+      "updatedAt": "2026-01-10T10:00:00.000Z"
+    },
+    {
+      "id": "veh-003",
+      "plateNumber": "AUH-4412",
+      "make": "Tesla",
+      "model": "Model 3",
+      "year": 2025,
+      "category": "electric",
+      "dailyRate": 149,
+      "weekendDailyRate": 165,
+      "weeklyRate": 920,
+      "monthlyRate": 3400,
+      "securityDeposit": 1200,
+      "status": "maintenance",
+      "location": "Abu Dhabi Airport",
+      "branchCode": "AUH-01",
+      "transmission": "Automatic",
+      "fuelType": "Electric",
+      "odometerKm": 50800,
+      "mileageLimitPerDay": 300,
+      "extraKmRate": 0.7,
+      "registrationExpiryDate": "2026-01-10",
+      "insuranceExpiryDate": "2026-01-30",
+      "inspectionDueDate": "2026-02-10",
+      "nextServiceAtKm": 50000,
+      "nextServiceDate": "2026-02-01",
+      "ownershipType": "owned",
+      "features": [
+        "bluetooth",
+        "backupCamera",
+        "cruiseControl",
+        "sunroof"
+      ],
+      "createdAt": "2026-01-12T10:00:00.000Z",
+      "updatedAt": "2026-02-01T08:30:00.000Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cus-001",
+      "firstName": "Nora",
+      "lastName": "Hassan",
+      "email": "nora.hassan@example.com",
+      "phone": "+971501112233",
+      "licenseNumber": "UAE93847",
+      "createdAt": "2026-01-05T09:00:00.000Z",
+      "updatedAt": "2026-01-05T09:00:00.000Z"
+    },
+    {
+      "id": "cus-002",
+      "firstName": "Daniel",
+      "lastName": "Smith",
+      "email": "daniel.smith@example.com",
+      "phone": "+971502224455",
+      "licenseNumber": "UKA12876",
+      "createdAt": "2026-01-07T09:00:00.000Z",
+      "updatedAt": "2026-01-07T09:00:00.000Z"
+    }
+  ],
+  "reservations": [
+    {
+      "id": "res-001",
+      "customerId": "cus-001",
+      "vehicleId": "veh-002",
+      "startDate": "2026-03-03",
+      "endDate": "2026-03-08",
+      "status": "confirmed",
+      "insuranceTier": "plus",
+      "addOns": [
+        "gps"
+      ],
+      "discountCode": null,
+      "notes": "Airport pickup requested",
+      "rentalDays": 5,
+      "pricing": {
+        "dailyRate": 74,
+        "basePrice": 370,
+        "insuranceTier": "plus",
+        "insurancePrice": 90,
+        "addOns": [
+          "gps"
+        ],
+        "addOnPrice": 45,
+        "subtotal": 505,
+        "discountCode": null,
+        "discountAmount": 0,
+        "discountedSubtotal": 505,
+        "taxRate": 0.12,
+        "tax": 60.6,
+        "total": 565.6
+      },
+      "createdAt": "2026-02-10T07:00:00.000Z",
+      "updatedAt": "2026-02-10T07:00:00.000Z"
+    }
+  ],
+  "vehicleDocuments": [],
+  "workOrders": [
+    {
+      "id": "wo-001",
+      "vehicleId": "veh-003",
+      "title": "Battery and brake inspection",
+      "description": "Preventive inspection before returning to available fleet",
+      "priority": "high",
+      "status": "in_progress",
+      "scheduledDate": "2026-02-25",
+      "odometerKm": 50800,
+      "costEstimate": 420,
+      "actualCost": null,
+      "vendorName": "Abu Dhabi EV Service Center",
+      "notes": "Check brake pads and battery health report",
+      "createdAt": "2026-02-20T07:00:00.000Z",
+      "updatedAt": "2026-02-20T07:00:00.000Z",
+      "completedAt": null
+    }
+  ]
+}

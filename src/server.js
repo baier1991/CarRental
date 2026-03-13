@@ -4,7 +4,7 @@ const { randomUUID } = require("node:crypto");
 const express = require("express");
 const multer = require("multer");
 
-const { readStore, writeStore } = require("./data/store");
+const { readStore, writeStore, resetStoreWithSeed } = require("./data/store");
 const { calculateQuote, ADD_ON_DAILY_RATE, INSURANCE_DAILY_RATE } = require("./domain/pricing");
 const {
   hasVehicleConflict,
@@ -226,6 +226,20 @@ function calculateDashboard(store) {
 
 app.get("/api/health", (_req, res) => {
   return res.json({ status: "ok", timestamp: nowIso() });
+});
+
+app.post("/api/admin/seed-demo", (_req, res) => {
+  const seededStore = resetStoreWithSeed();
+  return res.json({
+    success: true,
+    counts: {
+      vehicles: seededStore.vehicles.length,
+      customers: seededStore.customers.length,
+      reservations: seededStore.reservations.length,
+      workOrders: seededStore.workOrders.length,
+      vehicleDocuments: seededStore.vehicleDocuments.length,
+    },
+  });
 });
 
 app.get("/api/config", (_req, res) => {

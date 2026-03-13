@@ -36,6 +36,11 @@ Main UI routes:
 - `/reservations.html` - Reservations
 - `/maintenance.html` - Maintenance & Documents
 
+If demo records are missing in a deployed environment:
+
+- Open home (`/`) and click **Restore Demo Data**, or
+- Call `POST /api/admin/seed-demo`
+
 ## One-click cloud deploy (open on mobile)
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/baier1991/CarRental)
