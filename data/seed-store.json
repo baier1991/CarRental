@@ -1,110 +1,124 @@
 {
+  "meta": {
+    "demoDataVersion": "2026-03-14-demo-reset-1"
+  },
+  "tenants": [
+    {
+      "id": "tenant-acme",
+      "slug": "acme",
+      "name": "Acme Rentals",
+      "isActive": true,
+      "createdAt": "2026-03-01T00:00:00.000Z",
+      "updatedAt": "2026-03-01T00:00:00.000Z"
+    },
+    {
+      "id": "tenant-horizon",
+      "slug": "horizon",
+      "name": "Horizon Drive",
+      "isActive": true,
+      "createdAt": "2026-03-01T00:00:00.000Z",
+      "updatedAt": "2026-03-01T00:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-acme-owner",
+      "tenantId": "tenant-acme",
+      "firstName": "Acme",
+      "lastName": "Owner",
+      "email": "owner@acme.demo",
+      "role": "owner",
+      "isActive": true,
+      "passwordHash": "4c457998f00a1d5b1a7003cae2be5267:2ed81e40260f3445c6d259b264241db7e7a50a8c6831be2bbc93aa7bc858c01afed36c817e6c02998ce2361a38dec8e411f2b660ee091ab53e6dc6f34ace5c02",
+      "createdAt": "2026-03-01T00:00:00.000Z",
+      "updatedAt": "2026-03-01T00:00:00.000Z",
+      "lastLoginAt": null
+    },
+    {
+      "id": "usr-horizon-owner",
+      "tenantId": "tenant-horizon",
+      "firstName": "Horizon",
+      "lastName": "Owner",
+      "email": "owner@horizon.demo",
+      "role": "owner",
+      "isActive": true,
+      "passwordHash": "8a6f7f316db453fd493921709ebe1b99:57fa130c1683c7311c8d6e1a5b3dab138589f7d8b46cf80ed9e23357f6233c5a21a615f50e67cd7c779fd28be32d4ce3b97a15c0c15f512261b32db6bfc83870",
+      "createdAt": "2026-03-01T00:00:00.000Z",
+      "updatedAt": "2026-03-01T00:00:00.000Z",
+      "lastLoginAt": null
+    }
+  ],
+  "sessions": [],
   "vehicles": [
     {
-      "id": "veh-001",
-      "plateNumber": "DXB-1024",
+      "id": "veh-ac-001",
+      "tenantId": "tenant-acme",
+      "plateNumber": "DXB-2101",
       "make": "Toyota",
       "model": "Corolla",
-      "year": 2024,
+      "year": 2025,
       "category": "economy",
-      "dailyRate": 55,
-      "weekendDailyRate": 62,
-      "weeklyRate": 330,
-      "monthlyRate": 1200,
-      "securityDeposit": 500,
+      "dailyRate": 59,
+      "weekendDailyRate": 66,
+      "weeklyRate": 360,
+      "monthlyRate": 1290,
+      "securityDeposit": 550,
       "status": "available",
       "location": "Dubai Downtown",
       "branchCode": "DXB-01",
       "transmission": "Automatic",
       "fuelType": "Petrol",
-      "odometerKm": 41450,
+      "odometerKm": 22500,
       "mileageLimitPerDay": 250,
       "extraKmRate": 0.35,
-      "registrationExpiryDate": "2026-03-05",
-      "insuranceExpiryDate": "2026-04-10",
-      "inspectionDueDate": "2026-03-01",
-      "nextServiceAtKm": 45000,
-      "nextServiceDate": "2026-03-02",
+      "registrationExpiryDate": "2026-09-05",
+      "insuranceExpiryDate": "2026-08-18",
+      "inspectionDueDate": "2026-09-20",
+      "nextServiceAtKm": 26000,
+      "nextServiceDate": "2026-05-02",
       "ownershipType": "owned",
       "features": [
         "bluetooth",
         "backupCamera",
         "tollTag"
       ],
-      "createdAt": "2026-01-08T10:00:00.000Z",
-      "updatedAt": "2026-01-08T10:00:00.000Z",
-      "tenantId": "tenant-acme"
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:00:00.000Z"
     },
     {
-      "id": "veh-002",
-      "plateNumber": "DXB-7761",
+      "id": "veh-ac-002",
+      "tenantId": "tenant-acme",
+      "plateNumber": "DXB-4820",
       "make": "Hyundai",
-      "model": "Creta",
+      "model": "Tucson",
       "year": 2025,
       "category": "suv",
-      "dailyRate": 74,
-      "weekendDailyRate": 82,
-      "weeklyRate": 460,
-      "monthlyRate": 1550,
-      "securityDeposit": 700,
+      "dailyRate": 92,
+      "weekendDailyRate": 102,
+      "weeklyRate": 580,
+      "monthlyRate": 2050,
+      "securityDeposit": 850,
       "status": "available",
       "location": "Dubai Marina",
       "branchCode": "DXB-02",
       "transmission": "Automatic",
       "fuelType": "Petrol",
-      "odometerKm": 19300,
+      "odometerKm": 17300,
       "mileageLimitPerDay": 280,
-      "extraKmRate": 0.4,
-      "registrationExpiryDate": "2026-08-01",
-      "insuranceExpiryDate": "2026-06-10",
-      "inspectionDueDate": "2026-09-01",
-      "nextServiceAtKm": 25000,
-      "nextServiceDate": "2026-05-01",
+      "extraKmRate": 0.45,
+      "registrationExpiryDate": "2026-10-12",
+      "insuranceExpiryDate": "2026-09-15",
+      "inspectionDueDate": "2026-10-20",
+      "nextServiceAtKm": 22000,
+      "nextServiceDate": "2026-06-10",
       "ownershipType": "leased",
       "features": [
         "appleCarPlay",
         "androidAuto",
         "parkingSensors"
       ],
-      "createdAt": "2026-01-10T10:00:00.000Z",
-      "updatedAt": "2026-01-10T10:00:00.000Z",
-      "tenantId": "tenant-acme"
-    },
-    {
-      "id": "veh-003",
-      "plateNumber": "AUH-4412",
-      "make": "Tesla",
-      "model": "Model 3",
-      "year": 2025,
-      "category": "electric",
-      "dailyRate": 149,
-      "weekendDailyRate": 165,
-      "weeklyRate": 920,
-      "monthlyRate": 3400,
-      "securityDeposit": 1200,
-      "status": "maintenance",
-      "location": "Abu Dhabi Airport",
-      "branchCode": "AUH-01",
-      "transmission": "Automatic",
-      "fuelType": "Electric",
-      "odometerKm": 50800,
-      "mileageLimitPerDay": 300,
-      "extraKmRate": 0.7,
-      "registrationExpiryDate": "2026-01-10",
-      "insuranceExpiryDate": "2026-01-30",
-      "inspectionDueDate": "2026-02-10",
-      "nextServiceAtKm": 50000,
-      "nextServiceDate": "2026-02-01",
-      "ownershipType": "owned",
-      "features": [
-        "bluetooth",
-        "backupCamera",
-        "cruiseControl",
-        "sunroof"
-      ],
-      "createdAt": "2026-01-12T10:00:00.000Z",
-      "updatedAt": "2026-02-01T08:30:00.000Z",
-      "tenantId": "tenant-acme"
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:00:00.000Z"
     },
     {
       "id": "veh-hz-001",
@@ -137,32 +151,32 @@
         "bluetooth",
         "backupCamera"
       ],
-      "createdAt": "2026-01-15T08:00:00.000Z",
-      "updatedAt": "2026-01-15T08:00:00.000Z"
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:00:00.000Z"
     }
   ],
   "customers": [
     {
-      "id": "cus-001",
+      "id": "cus-ac-001",
+      "tenantId": "tenant-acme",
       "firstName": "Nora",
       "lastName": "Hassan",
       "email": "nora.hassan@example.com",
       "phone": "+971501112233",
       "licenseNumber": "UAE93847",
-      "createdAt": "2026-01-05T09:00:00.000Z",
-      "updatedAt": "2026-01-05T09:00:00.000Z",
-      "tenantId": "tenant-acme"
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:00:00.000Z"
     },
     {
-      "id": "cus-002",
+      "id": "cus-ac-002",
+      "tenantId": "tenant-acme",
       "firstName": "Daniel",
       "lastName": "Smith",
       "email": "daniel.smith@example.com",
       "phone": "+971502224455",
       "licenseNumber": "UKA12876",
-      "createdAt": "2026-01-07T09:00:00.000Z",
-      "updatedAt": "2026-01-07T09:00:00.000Z",
-      "tenantId": "tenant-acme"
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:00:00.000Z"
     },
     {
       "id": "cus-hz-001",
@@ -172,53 +186,53 @@
       "email": "mariam.ali@example.com",
       "phone": "+971509991122",
       "licenseNumber": "UAE55123",
-      "createdAt": "2026-01-16T09:00:00.000Z",
-      "updatedAt": "2026-01-16T09:00:00.000Z"
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:00:00.000Z"
     }
   ],
   "reservations": [
     {
-      "id": "res-001",
-      "customerId": "cus-001",
-      "vehicleId": "veh-002",
-      "startDate": "2026-03-03",
-      "endDate": "2026-03-08",
+      "id": "res-ac-001",
+      "tenantId": "tenant-acme",
+      "customerId": "cus-ac-001",
+      "vehicleId": "veh-ac-002",
+      "startDate": "2026-03-20",
+      "endDate": "2026-03-24",
       "status": "confirmed",
       "insuranceTier": "plus",
       "addOns": [
         "gps"
       ],
       "discountCode": null,
-      "notes": "Airport pickup requested",
-      "rentalDays": 5,
+      "notes": "Hotel pickup",
+      "rentalDays": 4,
       "pricing": {
-        "dailyRate": 74,
-        "basePrice": 370,
+        "dailyRate": 92,
+        "basePrice": 368,
         "insuranceTier": "plus",
-        "insurancePrice": 90,
+        "insurancePrice": 72,
         "addOns": [
           "gps"
         ],
-        "addOnPrice": 45,
-        "subtotal": 505,
+        "addOnPrice": 36,
+        "subtotal": 476,
         "discountCode": null,
         "discountAmount": 0,
-        "discountedSubtotal": 505,
+        "discountedSubtotal": 476,
         "taxRate": 0.12,
-        "tax": 60.6,
-        "total": 565.6
+        "tax": 57.12,
+        "total": 533.12
       },
-      "createdAt": "2026-02-10T07:00:00.000Z",
-      "updatedAt": "2026-02-10T07:00:00.000Z",
-      "tenantId": "tenant-acme"
+      "createdAt": "2026-03-05T08:00:00.000Z",
+      "updatedAt": "2026-03-05T08:00:00.000Z"
     },
     {
       "id": "res-hz-001",
       "tenantId": "tenant-horizon",
       "customerId": "cus-hz-001",
       "vehicleId": "veh-hz-001",
-      "startDate": "2026-03-12",
-      "endDate": "2026-03-15",
+      "startDate": "2026-03-22",
+      "endDate": "2026-03-25",
       "status": "pending",
       "insuranceTier": "basic",
       "addOns": [],
@@ -240,29 +254,29 @@
         "tax": 17.64,
         "total": 164.64
       },
-      "createdAt": "2026-02-28T09:30:00.000Z",
-      "updatedAt": "2026-02-28T09:30:00.000Z"
+      "createdAt": "2026-03-05T08:00:00.000Z",
+      "updatedAt": "2026-03-05T08:00:00.000Z"
     }
   ],
   "vehicleDocuments": [],
   "workOrders": [
     {
-      "id": "wo-001",
-      "vehicleId": "veh-003",
-      "title": "Battery and brake inspection",
-      "description": "Preventive inspection before returning to available fleet",
-      "priority": "high",
-      "status": "in_progress",
-      "scheduledDate": "2026-02-25",
-      "odometerKm": 50800,
-      "costEstimate": 420,
+      "id": "wo-ac-001",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-002",
+      "title": "Quarterly maintenance",
+      "description": "Oil, filters, brake and tire inspection",
+      "priority": "medium",
+      "status": "open",
+      "scheduledDate": "2026-03-25",
+      "odometerKm": 17300,
+      "costEstimate": 220,
       "actualCost": null,
-      "vendorName": "Abu Dhabi EV Service Center",
-      "notes": "Check brake pads and battery health report",
-      "createdAt": "2026-02-20T07:00:00.000Z",
-      "updatedAt": "2026-02-20T07:00:00.000Z",
-      "completedAt": null,
-      "tenantId": "tenant-acme"
+      "vendorName": "Dubai Quick Service",
+      "notes": "",
+      "createdAt": "2026-03-06T07:00:00.000Z",
+      "updatedAt": "2026-03-06T07:00:00.000Z",
+      "completedAt": null
     },
     {
       "id": "wo-hz-001",
@@ -278,56 +292,9 @@
       "actualCost": null,
       "vendorName": "Sharjah Quick Service",
       "notes": "",
-      "createdAt": "2026-03-01T07:00:00.000Z",
-      "updatedAt": "2026-03-01T07:00:00.000Z",
+      "createdAt": "2026-03-06T07:00:00.000Z",
+      "updatedAt": "2026-03-06T07:00:00.000Z",
       "completedAt": null
     }
-  ],
-  "tenants": [
-    {
-      "id": "tenant-acme",
-      "slug": "acme",
-      "name": "Acme Rentals",
-      "isActive": true,
-      "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
-    },
-    {
-      "id": "tenant-horizon",
-      "slug": "horizon",
-      "name": "Horizon Drive",
-      "isActive": true,
-      "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
-    }
-  ],
-  "users": [
-    {
-      "id": "usr-acme-owner",
-      "tenantId": "tenant-acme",
-      "firstName": "Acme",
-      "lastName": "Owner",
-      "email": "owner@acme.demo",
-      "role": "owner",
-      "isActive": true,
-      "passwordHash": "4c457998f00a1d5b1a7003cae2be5267:2ed81e40260f3445c6d259b264241db7e7a50a8c6831be2bbc93aa7bc858c01afed36c817e6c02998ce2361a38dec8e411f2b660ee091ab53e6dc6f34ace5c02",
-      "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-01-01T00:00:00.000Z",
-      "lastLoginAt": null
-    },
-    {
-      "id": "usr-horizon-owner",
-      "tenantId": "tenant-horizon",
-      "firstName": "Horizon",
-      "lastName": "Owner",
-      "email": "owner@horizon.demo",
-      "role": "owner",
-      "isActive": true,
-      "passwordHash": "8a6f7f316db453fd493921709ebe1b99:57fa130c1683c7311c8d6e1a5b3dab138589f7d8b46cf80ed9e23357f6233c5a21a615f50e67cd7c779fd28be32d4ce3b97a15c0c15f512261b32db6bfc83870",
-      "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-01-01T00:00:00.000Z",
-      "lastLoginAt": null
-    }
-  ],
-  "sessions": []
+  ]
 }

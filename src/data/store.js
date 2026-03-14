@@ -8,6 +8,9 @@ const STORE_FILE_PATH = path.resolve(__dirname, "../../data/store.json");
 const SEED_STORE_FILE_PATH = path.resolve(__dirname, "../../data/seed-store.json");
 
 const DEFAULT_STORE = {
+  meta: {
+    demoDataVersion: null,
+  },
   tenants: [],
   users: [],
   sessions: [],
@@ -35,6 +38,14 @@ function ensureStoreFile() {
 }
 
 function normalizeStoreShape(parsed) {
+  const meta =
+    parsed && typeof parsed.meta === "object" && parsed.meta !== null
+      ? {
+          demoDataVersion: parsed.meta.demoDataVersion || null,
+        }
+      : {
+          demoDataVersion: null,
+        };
   const tenants = Array.isArray(parsed.tenants) ? parsed.tenants : [];
   const fallbackTenantId = tenants[0]?.id || "tenant-default";
   const withTenant = (items) =>
@@ -61,6 +72,7 @@ function normalizeStoreShape(parsed) {
     : [];
 
   return {
+    meta,
     tenants,
     users,
     sessions,
@@ -112,9 +124,17 @@ function readStore() {
 
   const parsed = JSON.parse(content);
   let normalized = normalizeStoreShape(parsed);
+  const seeded = readSeedStore();
+  if (
+    seeded.meta?.demoDataVersion &&
+    normalized.meta?.demoDataVersion !== seeded.meta.demoDataVersion
+  ) {
+    writeStore(seeded);
+    return seeded;
+  }
+
   normalized = ensureAuthBootstrap(normalized);
   if (isStoreEmpty(normalized)) {
-    const seeded = readSeedStore();
     if (!isStoreEmpty(seeded)) {
       writeStore(seeded);
       return seeded;
