@@ -1,4 +1,4 @@
-const { request, showToast, vehicleLabel, formatMoney } = window.AppCommon;
+const { request, showToast, vehicleLabel, formatMoney, sessionReady } = window.AppCommon;
 
 const state = {
   vehicles: [],
@@ -242,6 +242,7 @@ function attachHandlers() {
 
 async function bootstrap() {
   try {
+    await sessionReady;
     attachHandlers();
     await loadMaintenanceData();
   } catch (error) {

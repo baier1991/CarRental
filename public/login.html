@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Rental OS - Login</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="login">
+    <main class="container" style="max-width: 560px; padding-top: 3rem">
+      <section class="card">
+        <h1>Client Login</h1>
+        <p class="subtitle">Each client has isolated credentials and data.</p>
+        <form id="login-form" class="stack">
+          <label>
+            Client Slug
+            <input name="tenantSlug" placeholder="acme" required />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" placeholder="owner@acme.demo" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" required />
+          </label>
+          <button type="submit">Login</button>
+        </form>
+        <div id="login-message" class="soft-box"></div>
+      </section>
+
+      <section class="card">
+        <h2>Demo Credentials</h2>
+        <p style="margin: 0 0 0.5rem"><strong>Tenant:</strong> <code>acme</code></p>
+        <p style="margin: 0 0 0.5rem"><strong>Email:</strong> <code>owner@acme.demo</code></p>
+        <p style="margin: 0 0 0.75rem"><strong>Password:</strong> <code>Acme123!</code></p>
+        <hr />
+        <p style="margin: 0.75rem 0 0.5rem"><strong>Tenant:</strong> <code>horizon</code></p>
+        <p style="margin: 0 0 0.5rem"><strong>Email:</strong> <code>owner@horizon.demo</code></p>
+        <p style="margin: 0"><strong>Password:</strong> <code>Horizon123!</code></p>
+      </section>
+
+      <div id="toast" class="toast hidden" aria-live="polite"></div>
+    </main>
+
+    <script src="/common.js"></script>
+    <script src="/login.js"></script>
+  </body>
+</html>

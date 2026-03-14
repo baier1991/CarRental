@@ -31,6 +31,13 @@ async function request(url, options = {}) {
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json() : await response.text();
 
+  if (response.status === 401 && !options.suppressAuthRedirect) {
+    const currentPath = window.location.pathname;
+    if (!currentPath.endsWith("/login.html")) {
+      window.location.replace("/login.html");
+    }
+  }
+
   if (!response.ok) {
     const message =
       typeof data === "string" ? data || `Request failed: ${response.status}` : data?.error || `Request failed: ${response.status}`;
@@ -78,7 +85,46 @@ function initAppShell() {
   updateActiveMenuLink();
 }
 
-initAppShell();
+async function initializeSession() {
+  const currentPath = window.location.pathname;
+  const isLoginPage = currentPath.endsWith("/login.html");
+  if (isLoginPage) {
+    return null;
+  }
+
+  try {
+    const session = await request("/api/auth/me", { suppressAuthRedirect: true });
+    const summary = document.getElementById("session-summary");
+    if (summary) {
+      summary.innerHTML = `
+        <strong>${session.tenant.name}</strong><br />
+        <small>${session.user.firstName || ""} ${session.user.lastName || ""} (${session.user.role})</small>
+      `;
+    }
+
+    const logoutButton = document.getElementById("logout-btn");
+    if (logoutButton) {
+      logoutButton.addEventListener("click", async () => {
+        try {
+          await request("/api/auth/logout", { method: "POST", suppressAuthRedirect: true });
+        } catch (_error) {
+          // Ignore logout errors and redirect anyway.
+        }
+        window.location.replace("/login.html");
+      });
+    }
+
+    return session;
+  } catch (_error) {
+    window.location.replace("/login.html");
+    return null;
+  }
+}
+
+const sessionReady = (async () => {
+  initAppShell();
+  return initializeSession();
+})();
 
 window.AppCommon = {
   showToast,
@@ -86,4 +132,5 @@ window.AppCommon = {
   formatMoney,
   collectCheckedValues,
   vehicleLabel,
+  sessionReady,
 };

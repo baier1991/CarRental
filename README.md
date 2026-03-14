@@ -6,7 +6,8 @@ A starter product for rental car companies to manage fleet, customers, reservati
 
 - **Backend API** built with Node.js + Express
 - **Frontend dashboard** split by section with sidebar navigation
-- **Frontend ready for backend auth integration** (permissions to be enforced server-side after login)
+- **Multi-tenant authentication** with tenant login and isolated client data
+- **User management** (create users, assign roles, activate/deactivate, password reset)
 - **Pricing engine** with insurance tiers, add-ons, discount codes, and tax
 - **Reservation conflict checks** to prevent overlapping active bookings
 - **Advanced vehicle intake** with VIN, category, branch, compliance dates, service schedule, and rate plans
@@ -25,7 +26,7 @@ npm run start
 
 Open:
 
-- `http://localhost:3000` for the home dashboard
+- `http://localhost:3000/login.html` for login
 - `http://localhost:3000/api/health` for API health check
 
 Main UI routes:
@@ -33,6 +34,7 @@ Main UI routes:
 - `/` - Home
 - `/fleet.html` - Fleet
 - `/customers.html` - Customers
+- `/users.html` - User Management
 - `/reservations.html` - Reservations
 - `/maintenance.html` - Maintenance & Documents
 
@@ -40,6 +42,11 @@ If demo records are missing in a deployed environment:
 
 - Open home (`/`) and click **Restore Demo Data**, or
 - Call `POST /api/admin/seed-demo`
+
+Demo logins:
+
+- Tenant: `acme` | Email: `owner@acme.demo` | Password: `Acme123!`
+- Tenant: `horizon` | Email: `owner@horizon.demo` | Password: `Horizon123!`
 
 ## One-click cloud deploy (open on mobile)
 
@@ -74,10 +81,14 @@ Detailed steps: [`docs/deployment.md`](docs/deployment.md)
 │   ├── fleet.js
 │   ├── home.js
 │   ├── index.html
+│   ├── login.html
+│   ├── login.js
 │   ├── maintenance.html
 │   ├── maintenance.js
 │   ├── reservations.html
 │   ├── reservations.js
+│   ├── users.html
+│   ├── users.js
 │   └── styles.css
 ├── railway.json
 ├── render.yaml
@@ -85,6 +96,7 @@ Detailed steps: [`docs/deployment.md`](docs/deployment.md)
 │   ├── data/
 │   │   └── store.js
 │   ├── domain/
+│   │   ├── auth.js
 │   │   ├── vehicleImport.js
 │   │   ├── vehicles.js
 │   │   ├── workOrders.js
@@ -96,6 +108,12 @@ Detailed steps: [`docs/deployment.md`](docs/deployment.md)
 
 ## Main API endpoints
 
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `GET/POST /api/users`
+- `PATCH /api/users/:userId`
+- `PATCH /api/users/:userId/password`
 - `GET /api/dashboard`
 - `GET/POST /api/vehicles`
 - `PATCH /api/vehicles/:vehicleId`

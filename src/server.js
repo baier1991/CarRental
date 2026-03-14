@@ -26,6 +26,7 @@ const {
   WORK_ORDER_STATUSES,
   normalizeWorkOrderInput,
 } = require("./domain/workOrders");
+const { hashPassword, verifyPassword, sanitizeUser, createSessionToken } = require("./domain/auth");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -41,9 +42,21 @@ const DOCUMENT_TYPES = new Set(["registration", "insurance", "inspection", "cont
 const ACTIVE_WORK_ORDER_STATUSES = new Set(["open", "in_progress", "on_hold"]);
 const UPLOAD_DIRECTORY = path.resolve(__dirname, "../uploads/vehicle-documents");
 const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
+const SESSION_COOKIE_NAME = "cr_session";
+const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const USER_ROLES = new Set(["owner", "admin", "agent", "viewer"]);
+const PROTECTED_PAGE_PATHS = [
+  "/",
+  "/index.html",
+  "/fleet.html",
+  "/customers.html",
+  "/reservations.html",
+  "/maintenance.html",
+  "/users.html",
+];
 
 app.use(express.json());
-app.use(express.static(path.resolve(__dirname, "../public")));
+const publicDirectory = path.resolve(__dirname, "../public");
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 
 function ensureUploadDirectory() {
@@ -102,6 +115,78 @@ function sendValidationError(res, message) {
   return res.status(400).json({ error: message });
 }
 
+function parseCookies(cookieHeader = "") {
+  return String(cookieHeader)
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .reduce((acc, pair) => {
+      const index = pair.indexOf("=");
+      if (index < 0) {
+        return acc;
+      }
+      const key = pair.slice(0, index).trim();
+      const value = pair.slice(index + 1).trim();
+      acc[key] = decodeURIComponent(value);
+      return acc;
+    }, {});
+}
+
+function getSessionTokenFromRequest(req) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  if (cookies[SESSION_COOKIE_NAME]) {
+    return cookies[SESSION_COOKIE_NAME];
+  }
+
+  const authHeader = req.headers.authorization || "";
+  if (authHeader.startsWith("Bearer ")) {
+    return authHeader.slice("Bearer ".length).trim();
+  }
+  return null;
+}
+
+function resolveAuthContext(store, req) {
+  const token = getSessionTokenFromRequest(req);
+  if (!token) {
+    return null;
+  }
+
+  const now = Date.now();
+  store.sessions = store.sessions.filter((session) => new Date(session.expiresAt).getTime() > now);
+  const session = store.sessions.find((item) => item.token === token);
+  if (!session) {
+    return null;
+  }
+
+  const user = store.users.find((item) => item.id === session.userId && item.isActive !== false);
+  if (!user) {
+    return null;
+  }
+
+  const tenant = store.tenants.find((item) => item.id === session.tenantId && item.isActive !== false);
+  if (!tenant) {
+    return null;
+  }
+
+  return { session, user, tenant };
+}
+
+function setSessionCookie(res, token) {
+  const maxAgeSeconds = Math.floor(SESSION_MAX_AGE_MS / 1000);
+  const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader(
+    "Set-Cookie",
+    `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${secureFlag}`
+  );
+}
+
+function clearSessionCookie(res) {
+  res.setHeader(
+    "Set-Cookie",
+    `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+  );
+}
+
 function normalizeReservationStatus(status) {
   const normalized = String(status || "pending").trim().toLowerCase();
   if (!RESERVATION_STATUSES.has(normalized)) {
@@ -156,6 +241,53 @@ function safeNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
+
+function forTenant(items, tenantId) {
+  return items.filter((item) => item.tenantId === tenantId);
+}
+
+function requireAuth(req, res, next) {
+  const store = readStore();
+  const authContext = resolveAuthContext(store, req);
+  if (!authContext) {
+    clearSessionCookie(res);
+    return res.status(401).json({ error: "Authentication required." });
+  }
+
+  req.store = store;
+  req.auth = authContext;
+  req.tenantId = authContext.tenant.id;
+  return next();
+}
+
+function requireRoles(...roles) {
+  return (req, res, next) => {
+    if (!req.auth) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    if (!roles.includes(req.auth.user.role)) {
+      return res.status(403).json({ error: "Insufficient permissions." });
+    }
+    return next();
+  };
+}
+
+app.get("/login.html", (_req, res) => {
+  return res.sendFile(path.resolve(publicDirectory, "login.html"));
+});
+
+app.get(PROTECTED_PAGE_PATHS, (req, res, next) => {
+  const store = readStore();
+  const authContext = resolveAuthContext(store, req);
+  if (!authContext) {
+    return res.redirect("/login.html");
+  }
+
+  const requestedPath = req.path === "/" ? "/index.html" : req.path;
+  return res.sendFile(path.resolve(publicDirectory, `.${requestedPath}`));
+});
+
+app.use(express.static(publicDirectory));
 
 function calculateDashboard(store) {
   const activeReservations = store.reservations.filter((reservation) =>
@@ -228,11 +360,84 @@ app.get("/api/health", (_req, res) => {
   return res.json({ status: "ok", timestamp: nowIso() });
 });
 
-app.post("/api/admin/seed-demo", (_req, res) => {
+app.post("/api/auth/login", (req, res) => {
+  const { tenantSlug, email, password } = req.body || {};
+  if (!tenantSlug || !email || !password) {
+    return sendValidationError(res, "tenantSlug, email, and password are required.");
+  }
+
+  const store = readStore();
+  const normalizedTenantSlug = String(tenantSlug).trim().toLowerCase();
+  const tenant = store.tenants.find(
+    (item) => String(item.slug || "").toLowerCase() === normalizedTenantSlug && item.isActive !== false
+  );
+  if (!tenant) {
+    return res.status(401).json({ error: "Invalid tenant credentials." });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const user = store.users.find(
+    (item) =>
+      item.tenantId === tenant.id &&
+      String(item.email || "").toLowerCase() === normalizedEmail &&
+      item.isActive !== false
+  );
+
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return res.status(401).json({ error: "Invalid tenant credentials." });
+  }
+
+  const token = createSessionToken();
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_MS).toISOString();
+  store.sessions = store.sessions.filter((session) => session.userId !== user.id);
+  store.sessions.push({
+    id: randomUUID(),
+    token,
+    userId: user.id,
+    tenantId: tenant.id,
+    createdAt: nowIso(),
+    expiresAt,
+  });
+  user.lastLoginAt = nowIso();
+  user.updatedAt = nowIso();
+  writeStore(store);
+  setSessionCookie(res, token);
+
+  return res.json({
+    user: sanitizeUser(user),
+    tenant: {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+    },
+  });
+});
+
+app.post("/api/auth/logout", requireAuth, (req, res) => {
+  req.store.sessions = req.store.sessions.filter((session) => session.id !== req.auth.session.id);
+  writeStore(req.store);
+  clearSessionCookie(res);
+  return res.json({ success: true });
+});
+
+app.get("/api/auth/me", requireAuth, (req, res) => {
+  return res.json({
+    user: sanitizeUser(req.auth.user),
+    tenant: {
+      id: req.auth.tenant.id,
+      name: req.auth.tenant.name,
+      slug: req.auth.tenant.slug,
+    },
+  });
+});
+
+app.post("/api/admin/seed-demo", requireAuth, requireRoles("owner"), (_req, res) => {
   const seededStore = resetStoreWithSeed();
   return res.json({
     success: true,
     counts: {
+      tenants: seededStore.tenants.length,
+      users: seededStore.users.length,
       vehicles: seededStore.vehicles.length,
       customers: seededStore.customers.length,
       reservations: seededStore.reservations.length,
@@ -242,7 +447,7 @@ app.post("/api/admin/seed-demo", (_req, res) => {
   });
 });
 
-app.get("/api/config", (_req, res) => {
+app.get("/api/config", requireAuth, (_req, res) => {
   return res.json({
     vehicleStatuses: Array.from(VEHICLE_STATUSES),
     vehicleCategories: Array.from(VEHICLE_CATEGORIES),
@@ -257,17 +462,127 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
-app.get("/api/dashboard", (_req, res) => {
-  const store = readStore();
-  return res.json(calculateDashboard(store));
+app.get("/api/users", requireAuth, requireRoles("owner", "admin"), (req, res) => {
+  const users = forTenant(req.store.users, req.tenantId).map((user) => sanitizeUser(user));
+  return res.json(users);
 });
 
-app.get("/api/vehicles", (req, res) => {
-  const store = readStore();
+app.post("/api/users", requireAuth, requireRoles("owner", "admin"), (req, res) => {
+  const { firstName, lastName, email, role, password, isActive = true } = req.body || {};
+  if (!firstName || !lastName || !email || !role || !password) {
+    return sendValidationError(res, "firstName, lastName, email, role, and password are required.");
+  }
+
+  const normalizedRole = String(role).trim().toLowerCase();
+  if (!USER_ROLES.has(normalizedRole)) {
+    return sendValidationError(res, "Invalid user role.");
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const duplicate = forTenant(req.store.users, req.tenantId).some(
+    (user) => String(user.email).toLowerCase() === normalizedEmail
+  );
+  if (duplicate) {
+    return res.status(409).json({ error: "A user with this email already exists." });
+  }
+
+  const user = {
+    id: randomUUID(),
+    tenantId: req.tenantId,
+    firstName: String(firstName).trim(),
+    lastName: String(lastName).trim(),
+    email: normalizedEmail,
+    role: normalizedRole,
+    isActive: Boolean(isActive),
+    passwordHash: hashPassword(password),
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    lastLoginAt: null,
+  };
+  req.store.users.push(user);
+  writeStore(req.store);
+  return res.status(201).json(sanitizeUser(user));
+});
+
+app.patch("/api/users/:userId", requireAuth, requireRoles("owner", "admin"), (req, res) => {
+  const user = req.store.users.find(
+    (item) => item.id === req.params.userId && item.tenantId === req.tenantId
+  );
+  if (!user) {
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  const { firstName, lastName, role, isActive } = req.body || {};
+  if (role !== undefined) {
+    const normalizedRole = String(role).trim().toLowerCase();
+    if (!USER_ROLES.has(normalizedRole)) {
+      return sendValidationError(res, "Invalid user role.");
+    }
+    user.role = normalizedRole;
+  }
+
+  if (firstName !== undefined) {
+    user.firstName = String(firstName).trim();
+  }
+  if (lastName !== undefined) {
+    user.lastName = String(lastName).trim();
+  }
+  if (isActive !== undefined) {
+    user.isActive = Boolean(isActive);
+  }
+  user.updatedAt = nowIso();
+  writeStore(req.store);
+  return res.json(sanitizeUser(user));
+});
+
+app.patch("/api/users/:userId/password", requireAuth, (req, res) => {
+  const target = req.store.users.find(
+    (item) => item.id === req.params.userId && item.tenantId === req.tenantId
+  );
+  if (!target) {
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  const actor = req.auth.user;
+  const actorCanManage = actor.role === "owner" || actor.role === "admin";
+  const isSelf = actor.id === target.id;
+  if (!actorCanManage && !isSelf) {
+    return res.status(403).json({ error: "Insufficient permissions." });
+  }
+
+  const { currentPassword, newPassword } = req.body || {};
+  if (!newPassword || String(newPassword).length < 8) {
+    return sendValidationError(res, "newPassword must be at least 8 characters.");
+  }
+
+  if (!actorCanManage) {
+    if (!currentPassword || !verifyPassword(currentPassword, target.passwordHash)) {
+      return res.status(401).json({ error: "Invalid current password." });
+    }
+  }
+
+  target.passwordHash = hashPassword(newPassword);
+  target.updatedAt = nowIso();
+  writeStore(req.store);
+  return res.json({ success: true });
+});
+
+app.get("/api/dashboard", requireAuth, (req, res) => {
+  const scopedStore = {
+    vehicles: forTenant(req.store.vehicles, req.tenantId),
+    customers: forTenant(req.store.customers, req.tenantId),
+    reservations: forTenant(req.store.reservations, req.tenantId),
+    vehicleDocuments: forTenant(req.store.vehicleDocuments, req.tenantId),
+    workOrders: forTenant(req.store.workOrders, req.tenantId),
+  };
+  return res.json(calculateDashboard(scopedStore));
+});
+
+app.get("/api/vehicles", requireAuth, (req, res) => {
   const statusFilter = req.query.status ? String(req.query.status).trim().toLowerCase() : null;
   const categoryFilter = req.query.category ? String(req.query.category).trim().toLowerCase() : null;
   const branchFilter = req.query.branch ? String(req.query.branch).trim().toUpperCase() : null;
-  const vehicles = store.vehicles.filter((vehicle) => {
+  const vehicles = forTenant(req.store.vehicles, req.tenantId).filter((vehicle) => {
     if (statusFilter && vehicle.status !== statusFilter) {
       return false;
     }
@@ -282,7 +597,7 @@ app.get("/api/vehicles", (req, res) => {
   return res.json(vehicles);
 });
 
-app.post("/api/vehicles/import-csv", (req, res) => {
+app.post("/api/vehicles/import-csv", requireAuth, (req, res) => {
   const csvContent = req.body?.csvContent;
   const defaults = {
     location: req.body?.defaultLocation,
@@ -302,12 +617,14 @@ app.post("/api/vehicles/import-csv", (req, res) => {
     return res.status(400).json({ error: parsed.errors[0], details: parsed.errors });
   }
 
-  const store = readStore();
+  const store = req.store;
   const existingPlateSet = new Set(
-    store.vehicles.map((vehicle) => String(vehicle.plateNumber || "").toUpperCase())
+    forTenant(store.vehicles, req.tenantId).map((vehicle) =>
+      String(vehicle.plateNumber || "").toUpperCase()
+    )
   );
   const existingVinSet = new Set(
-    store.vehicles
+    forTenant(store.vehicles, req.tenantId)
       .map((vehicle) => String(vehicle.vin || "").toUpperCase())
       .filter((value) => value.length > 0)
   );
@@ -343,6 +660,7 @@ app.post("/api/vehicles/import-csv", (req, res) => {
 
     const vehicle = {
       id: randomUUID(),
+      tenantId: req.tenantId,
       ...normalizedVehicle,
       createdAt: nowIso(),
       updatedAt: nowIso(),
@@ -368,14 +686,14 @@ app.post("/api/vehicles/import-csv", (req, res) => {
   });
 });
 
-app.post("/api/vehicles", (req, res) => {
+app.post("/api/vehicles", requireAuth, (req, res) => {
   const { errors, normalizedVehicle } = normalizeVehicleInput(req.body);
   if (errors.length > 0) {
     return res.status(400).json({ error: errors[0], details: errors });
   }
 
-  const store = readStore();
-  const duplicatePlate = store.vehicles.some(
+  const store = req.store;
+  const duplicatePlate = forTenant(store.vehicles, req.tenantId).some(
     (vehicle) =>
       String(vehicle.plateNumber || "").toUpperCase() === String(normalizedVehicle.plateNumber).toUpperCase()
   );
@@ -385,13 +703,16 @@ app.post("/api/vehicles", (req, res) => {
 
   const duplicateVin =
     normalizedVehicle.vin &&
-    store.vehicles.some((vehicle) => String(vehicle.vin || "").toUpperCase() === normalizedVehicle.vin);
+    forTenant(store.vehicles, req.tenantId).some(
+      (vehicle) => String(vehicle.vin || "").toUpperCase() === normalizedVehicle.vin
+    );
   if (duplicateVin) {
     return res.status(409).json({ error: "A vehicle with this VIN already exists." });
   }
 
   const vehicle = {
     id: randomUUID(),
+    tenantId: req.tenantId,
     ...normalizedVehicle,
     createdAt: nowIso(),
     updatedAt: nowIso(),
@@ -402,15 +723,21 @@ app.post("/api/vehicles", (req, res) => {
   return res.status(201).json(vehicle);
 });
 
-app.get("/api/vehicles/:vehicleId", (req, res) => {
-  const store = readStore();
-  const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+app.get("/api/vehicles/:vehicleId", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicle = store.vehicles.find(
+    (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+  );
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
 
-  const documents = store.vehicleDocuments.filter((document) => document.vehicleId === vehicle.id);
-  const workOrders = store.workOrders.filter((workOrder) => workOrder.vehicleId === vehicle.id);
+  const documents = store.vehicleDocuments.filter(
+    (document) => document.vehicleId === vehicle.id && document.tenantId === req.tenantId
+  );
+  const workOrders = store.workOrders.filter(
+    (workOrder) => workOrder.vehicleId === vehicle.id && workOrder.tenantId === req.tenantId
+  );
 
   return res.json({
     ...vehicle,
@@ -420,9 +747,11 @@ app.get("/api/vehicles/:vehicleId", (req, res) => {
   });
 });
 
-app.patch("/api/vehicles/:vehicleId", (req, res) => {
-  const store = readStore();
-  const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+app.patch("/api/vehicles/:vehicleId", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicle = store.vehicles.find(
+    (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+  );
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
@@ -434,7 +763,7 @@ app.patch("/api/vehicles/:vehicleId", (req, res) => {
 
   if (
     normalizedPatch.plateNumber &&
-    store.vehicles.some(
+    forTenant(store.vehicles, req.tenantId).some(
       (item) =>
         item.id !== vehicle.id &&
         String(item.plateNumber || "").toUpperCase() === normalizedPatch.plateNumber
@@ -445,7 +774,7 @@ app.patch("/api/vehicles/:vehicleId", (req, res) => {
 
   if (
     normalizedPatch.vin &&
-    store.vehicles.some(
+    forTenant(store.vehicles, req.tenantId).some(
       (item) => item.id !== vehicle.id && String(item.vin || "").toUpperCase() === normalizedPatch.vin
     )
   ) {
@@ -469,14 +798,16 @@ app.patch("/api/vehicles/:vehicleId", (req, res) => {
   return res.json(vehicle);
 });
 
-app.patch("/api/vehicles/:vehicleId/status", (req, res) => {
+app.patch("/api/vehicles/:vehicleId/status", requireAuth, (req, res) => {
   const status = normalizeVehicleStatus(req.body.status);
   if (!status) {
     return sendValidationError(res, "Invalid vehicle status.");
   }
 
-  const store = readStore();
-  const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+  const store = req.store;
+  const vehicle = store.vehicles.find(
+    (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+  );
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
@@ -487,20 +818,22 @@ app.patch("/api/vehicles/:vehicleId/status", (req, res) => {
   return res.json(vehicle);
 });
 
-app.get("/api/vehicles/:vehicleId/documents", (req, res) => {
-  const store = readStore();
-  const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+app.get("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicle = store.vehicles.find(
+    (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+  );
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
 
   const documents = store.vehicleDocuments
-    .filter((document) => document.vehicleId === vehicle.id)
+    .filter((document) => document.vehicleId === vehicle.id && document.tenantId === req.tenantId)
     .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
   return res.json(documents);
 });
 
-app.post("/api/vehicles/:vehicleId/documents", (req, res) => {
+app.post("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
   uploadVehicleDocument.single("document")(req, res, (uploadError) => {
     if (uploadError) {
       const message =
@@ -521,8 +854,10 @@ app.post("/api/vehicles/:vehicleId/documents", (req, res) => {
       return sendValidationError(res, "Invalid documentType.");
     }
 
-    const store = readStore();
-    const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+    const store = req.store;
+    const vehicle = store.vehicles.find(
+      (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+    );
     if (!vehicle) {
       return res.status(404).json({ error: "Vehicle not found." });
     }
@@ -534,6 +869,7 @@ app.post("/api/vehicles/:vehicleId/documents", (req, res) => {
 
     const documentRecord = {
       id: randomUUID(),
+      tenantId: req.tenantId,
       vehicleId: vehicle.id,
       documentType,
       originalName: req.file.originalname,
@@ -553,10 +889,13 @@ app.post("/api/vehicles/:vehicleId/documents", (req, res) => {
   });
 });
 
-app.delete("/api/vehicles/:vehicleId/documents/:documentId", (req, res) => {
-  const store = readStore();
+app.delete("/api/vehicles/:vehicleId/documents/:documentId", requireAuth, (req, res) => {
+  const store = req.store;
   const documentIndex = store.vehicleDocuments.findIndex(
-    (item) => item.id === req.params.documentId && item.vehicleId === req.params.vehicleId
+    (item) =>
+      item.id === req.params.documentId &&
+      item.vehicleId === req.params.vehicleId &&
+      item.tenantId === req.tenantId
   );
   if (documentIndex < 0) {
     return res.status(404).json({ error: "Document not found." });
@@ -573,12 +912,12 @@ app.delete("/api/vehicles/:vehicleId/documents/:documentId", (req, res) => {
   return res.json({ success: true });
 });
 
-app.get("/api/work-orders", (req, res) => {
-  const store = readStore();
+app.get("/api/work-orders", requireAuth, (req, res) => {
+  const store = req.store;
   const vehicleIdFilter = req.query.vehicleId ? String(req.query.vehicleId).trim() : null;
   const statusFilter = req.query.status ? String(req.query.status).trim().toLowerCase() : null;
 
-  const workOrders = store.workOrders
+  const workOrders = forTenant(store.workOrders, req.tenantId)
     .filter((workOrder) => {
       if (vehicleIdFilter && workOrder.vehicleId !== vehicleIdFilter) {
         return false;
@@ -593,22 +932,26 @@ app.get("/api/work-orders", (req, res) => {
   return res.json(workOrders);
 });
 
-app.get("/api/vehicles/:vehicleId/work-orders", (req, res) => {
-  const store = readStore();
-  const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+app.get("/api/vehicles/:vehicleId/work-orders", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicle = store.vehicles.find(
+    (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+  );
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
 
   const workOrders = store.workOrders
-    .filter((workOrder) => workOrder.vehicleId === vehicle.id)
+    .filter((workOrder) => workOrder.vehicleId === vehicle.id && workOrder.tenantId === req.tenantId)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return res.json(workOrders);
 });
 
-app.post("/api/vehicles/:vehicleId/work-orders", (req, res) => {
-  const store = readStore();
-  const vehicle = store.vehicles.find((item) => item.id === req.params.vehicleId);
+app.post("/api/vehicles/:vehicleId/work-orders", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicle = store.vehicles.find(
+    (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
+  );
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
@@ -620,6 +963,7 @@ app.post("/api/vehicles/:vehicleId/work-orders", (req, res) => {
 
   const workOrder = {
     id: randomUUID(),
+    tenantId: req.tenantId,
     vehicleId: vehicle.id,
     ...normalizedWorkOrder,
     createdAt: nowIso(),
@@ -632,9 +976,11 @@ app.post("/api/vehicles/:vehicleId/work-orders", (req, res) => {
   return res.status(201).json(workOrder);
 });
 
-app.patch("/api/work-orders/:workOrderId", (req, res) => {
-  const store = readStore();
-  const workOrder = store.workOrders.find((item) => item.id === req.params.workOrderId);
+app.patch("/api/work-orders/:workOrderId", requireAuth, (req, res) => {
+  const store = req.store;
+  const workOrder = store.workOrders.find(
+    (item) => item.id === req.params.workOrderId && item.tenantId === req.tenantId
+  );
   if (!workOrder) {
     return res.status(404).json({ error: "Work order not found." });
   }
@@ -656,12 +1002,11 @@ app.patch("/api/work-orders/:workOrderId", (req, res) => {
   return res.json(workOrder);
 });
 
-app.get("/api/customers", (_req, res) => {
-  const store = readStore();
-  return res.json(store.customers);
+app.get("/api/customers", requireAuth, (req, res) => {
+  return res.json(forTenant(req.store.customers, req.tenantId));
 });
 
-app.post("/api/customers", (req, res) => {
+app.post("/api/customers", requireAuth, (req, res) => {
   const { firstName, lastName, email, phone, licenseNumber } = req.body;
   if (!firstName || !lastName || !email || !phone || !licenseNumber) {
     return sendValidationError(
@@ -670,8 +1015,8 @@ app.post("/api/customers", (req, res) => {
     );
   }
 
-  const store = readStore();
-  const duplicateCustomer = store.customers.some(
+  const store = req.store;
+  const duplicateCustomer = forTenant(store.customers, req.tenantId).some(
     (customer) => customer.email.toLowerCase() === String(email).toLowerCase()
   );
   if (duplicateCustomer) {
@@ -680,6 +1025,7 @@ app.post("/api/customers", (req, res) => {
 
   const customer = {
     id: randomUUID(),
+    tenantId: req.tenantId,
     firstName: String(firstName).trim(),
     lastName: String(lastName).trim(),
     email: String(email).trim().toLowerCase(),
@@ -694,15 +1040,14 @@ app.post("/api/customers", (req, res) => {
   return res.status(201).json(customer);
 });
 
-app.get("/api/reservations", (_req, res) => {
-  const store = readStore();
-  const sortedReservations = [...store.reservations].sort(
+app.get("/api/reservations", requireAuth, (req, res) => {
+  const sortedReservations = [...forTenant(req.store.reservations, req.tenantId)].sort(
     (a, b) => new Date(a.startDate) - new Date(b.startDate)
   );
   return res.json(sortedReservations);
 });
 
-app.post("/api/reservations", (req, res) => {
+app.post("/api/reservations", requireAuth, (req, res) => {
   const {
     customerId,
     vehicleId,
@@ -727,13 +1072,15 @@ app.post("/api/reservations", (req, res) => {
     return sendValidationError(res, "Invalid reservation date range.");
   }
 
-  const store = readStore();
-  const customer = store.customers.find((item) => item.id === customerId);
+  const store = req.store;
+  const customer = store.customers.find(
+    (item) => item.id === customerId && item.tenantId === req.tenantId
+  );
   if (!customer) {
     return res.status(404).json({ error: "Customer not found." });
   }
 
-  const vehicle = store.vehicles.find((item) => item.id === vehicleId);
+  const vehicle = store.vehicles.find((item) => item.id === vehicleId && item.tenantId === req.tenantId);
   if (!vehicle) {
     return res.status(404).json({ error: "Vehicle not found." });
   }
@@ -759,6 +1106,7 @@ app.post("/api/reservations", (req, res) => {
 
   const reservation = {
     id: randomUUID(),
+    tenantId: req.tenantId,
     customerId,
     vehicleId,
     startDate,
@@ -774,7 +1122,7 @@ app.post("/api/reservations", (req, res) => {
     updatedAt: nowIso(),
   };
 
-  if (hasVehicleConflict(store.reservations, reservation)) {
+  if (hasVehicleConflict(forTenant(store.reservations, req.tenantId), reservation)) {
     return res.status(409).json({ error: "Vehicle has an overlapping reservation in this period." });
   }
 
@@ -783,20 +1131,22 @@ app.post("/api/reservations", (req, res) => {
   return res.status(201).json(reservation);
 });
 
-app.patch("/api/reservations/:reservationId/status", (req, res) => {
+app.patch("/api/reservations/:reservationId/status", requireAuth, (req, res) => {
   const status = normalizeReservationStatus(req.body.status);
   if (!status) {
     return sendValidationError(res, "Invalid reservation status.");
   }
 
-  const store = readStore();
-  const reservation = store.reservations.find((item) => item.id === req.params.reservationId);
+  const store = req.store;
+  const reservation = store.reservations.find(
+    (item) => item.id === req.params.reservationId && item.tenantId === req.tenantId
+  );
   if (!reservation) {
     return res.status(404).json({ error: "Reservation not found." });
   }
 
   const candidateReservation = { ...reservation, status };
-  if (hasVehicleConflict(store.reservations, candidateReservation, reservation.id)) {
+  if (hasVehicleConflict(forTenant(store.reservations, req.tenantId), candidateReservation, reservation.id)) {
     return res
       .status(409)
       .json({ error: "Cannot activate this reservation because it overlaps another booking." });
@@ -808,7 +1158,7 @@ app.patch("/api/reservations/:reservationId/status", (req, res) => {
   return res.json(reservation);
 });
 
-app.post("/api/quotes", (req, res) => {
+app.post("/api/quotes", requireAuth, (req, res) => {
   const { vehicleId, dailyRate, startDate, endDate, insuranceTier, addOns, discountCode } = req.body;
 
   if (!startDate || !endDate) {
@@ -817,8 +1167,8 @@ app.post("/api/quotes", (req, res) => {
 
   let effectiveDailyRate = dailyRate;
   if (vehicleId) {
-    const store = readStore();
-    const vehicle = store.vehicles.find((item) => item.id === vehicleId);
+    const store = req.store;
+    const vehicle = store.vehicles.find((item) => item.id === vehicleId && item.tenantId === req.tenantId);
     if (!vehicle) {
       return res.status(404).json({ error: "Vehicle not found." });
     }

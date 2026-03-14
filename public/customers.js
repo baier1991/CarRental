@@ -1,4 +1,4 @@
-const { request, showToast } = window.AppCommon;
+const { request, showToast, sessionReady } = window.AppCommon;
 
 const state = {
   customers: [],
@@ -113,6 +113,7 @@ function attachHandlers() {
 
 async function bootstrap() {
   try {
+    await sessionReady;
     attachHandlers();
     await loadCustomers();
   } catch (error) {

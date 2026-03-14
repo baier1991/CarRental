@@ -46,6 +46,24 @@ body {
   font-size: 0.86rem;
 }
 
+.sidebar-session {
+  margin: 0 0 0.7rem;
+  font-size: 0.85rem;
+  color: #dbeafe;
+  line-height: 1.35;
+}
+
+.logout-btn {
+  width: 100%;
+  margin-bottom: 0.9rem;
+  background: #334155;
+  border-color: #475569;
+}
+
+.logout-btn:hover {
+  background: #475569;
+}
+
 .sidebar-menu {
   display: grid;
   gap: 0.35rem;

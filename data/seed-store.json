@@ -32,7 +32,8 @@
         "tollTag"
       ],
       "createdAt": "2026-01-08T10:00:00.000Z",
-      "updatedAt": "2026-01-08T10:00:00.000Z"
+      "updatedAt": "2026-01-08T10:00:00.000Z",
+      "tenantId": "tenant-acme"
     },
     {
       "id": "veh-002",
@@ -66,7 +67,8 @@
         "parkingSensors"
       ],
       "createdAt": "2026-01-10T10:00:00.000Z",
-      "updatedAt": "2026-01-10T10:00:00.000Z"
+      "updatedAt": "2026-01-10T10:00:00.000Z",
+      "tenantId": "tenant-acme"
     },
     {
       "id": "veh-003",
@@ -101,7 +103,42 @@
         "sunroof"
       ],
       "createdAt": "2026-01-12T10:00:00.000Z",
-      "updatedAt": "2026-02-01T08:30:00.000Z"
+      "updatedAt": "2026-02-01T08:30:00.000Z",
+      "tenantId": "tenant-acme"
+    },
+    {
+      "id": "veh-hz-001",
+      "tenantId": "tenant-horizon",
+      "plateNumber": "SHJ-5521",
+      "make": "Nissan",
+      "model": "Sunny",
+      "year": 2024,
+      "category": "economy",
+      "dailyRate": 49,
+      "weekendDailyRate": 55,
+      "weeklyRate": 300,
+      "monthlyRate": 1080,
+      "securityDeposit": 450,
+      "status": "available",
+      "location": "Sharjah City Center",
+      "branchCode": "SHJ-01",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "odometerKm": 28000,
+      "mileageLimitPerDay": 220,
+      "extraKmRate": 0.3,
+      "registrationExpiryDate": "2026-07-15",
+      "insuranceExpiryDate": "2026-06-20",
+      "inspectionDueDate": "2026-08-01",
+      "nextServiceAtKm": 32000,
+      "nextServiceDate": "2026-04-05",
+      "ownershipType": "owned",
+      "features": [
+        "bluetooth",
+        "backupCamera"
+      ],
+      "createdAt": "2026-01-15T08:00:00.000Z",
+      "updatedAt": "2026-01-15T08:00:00.000Z"
     }
   ],
   "customers": [
@@ -113,7 +150,8 @@
       "phone": "+971501112233",
       "licenseNumber": "UAE93847",
       "createdAt": "2026-01-05T09:00:00.000Z",
-      "updatedAt": "2026-01-05T09:00:00.000Z"
+      "updatedAt": "2026-01-05T09:00:00.000Z",
+      "tenantId": "tenant-acme"
     },
     {
       "id": "cus-002",
@@ -123,7 +161,19 @@
       "phone": "+971502224455",
       "licenseNumber": "UKA12876",
       "createdAt": "2026-01-07T09:00:00.000Z",
-      "updatedAt": "2026-01-07T09:00:00.000Z"
+      "updatedAt": "2026-01-07T09:00:00.000Z",
+      "tenantId": "tenant-acme"
+    },
+    {
+      "id": "cus-hz-001",
+      "tenantId": "tenant-horizon",
+      "firstName": "Mariam",
+      "lastName": "Ali",
+      "email": "mariam.ali@example.com",
+      "phone": "+971509991122",
+      "licenseNumber": "UAE55123",
+      "createdAt": "2026-01-16T09:00:00.000Z",
+      "updatedAt": "2026-01-16T09:00:00.000Z"
     }
   ],
   "reservations": [
@@ -159,7 +209,39 @@
         "total": 565.6
       },
       "createdAt": "2026-02-10T07:00:00.000Z",
-      "updatedAt": "2026-02-10T07:00:00.000Z"
+      "updatedAt": "2026-02-10T07:00:00.000Z",
+      "tenantId": "tenant-acme"
+    },
+    {
+      "id": "res-hz-001",
+      "tenantId": "tenant-horizon",
+      "customerId": "cus-hz-001",
+      "vehicleId": "veh-hz-001",
+      "startDate": "2026-03-12",
+      "endDate": "2026-03-15",
+      "status": "pending",
+      "insuranceTier": "basic",
+      "addOns": [],
+      "discountCode": null,
+      "notes": "City pickup",
+      "rentalDays": 3,
+      "pricing": {
+        "dailyRate": 49,
+        "basePrice": 147,
+        "insuranceTier": "basic",
+        "insurancePrice": 0,
+        "addOns": [],
+        "addOnPrice": 0,
+        "subtotal": 147,
+        "discountCode": null,
+        "discountAmount": 0,
+        "discountedSubtotal": 147,
+        "taxRate": 0.12,
+        "tax": 17.64,
+        "total": 164.64
+      },
+      "createdAt": "2026-02-28T09:30:00.000Z",
+      "updatedAt": "2026-02-28T09:30:00.000Z"
     }
   ],
   "vehicleDocuments": [],
@@ -179,7 +261,73 @@
       "notes": "Check brake pads and battery health report",
       "createdAt": "2026-02-20T07:00:00.000Z",
       "updatedAt": "2026-02-20T07:00:00.000Z",
+      "completedAt": null,
+      "tenantId": "tenant-acme"
+    },
+    {
+      "id": "wo-hz-001",
+      "tenantId": "tenant-horizon",
+      "vehicleId": "veh-hz-001",
+      "title": "Quarterly inspection",
+      "description": "Routine safety and oil check",
+      "priority": "medium",
+      "status": "open",
+      "scheduledDate": "2026-03-20",
+      "odometerKm": 28000,
+      "costEstimate": 120,
+      "actualCost": null,
+      "vendorName": "Sharjah Quick Service",
+      "notes": "",
+      "createdAt": "2026-03-01T07:00:00.000Z",
+      "updatedAt": "2026-03-01T07:00:00.000Z",
       "completedAt": null
     }
-  ]
+  ],
+  "tenants": [
+    {
+      "id": "tenant-acme",
+      "slug": "acme",
+      "name": "Acme Rentals",
+      "isActive": true,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "tenant-horizon",
+      "slug": "horizon",
+      "name": "Horizon Drive",
+      "isActive": true,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-acme-owner",
+      "tenantId": "tenant-acme",
+      "firstName": "Acme",
+      "lastName": "Owner",
+      "email": "owner@acme.demo",
+      "role": "owner",
+      "isActive": true,
+      "passwordHash": "4c457998f00a1d5b1a7003cae2be5267:2ed81e40260f3445c6d259b264241db7e7a50a8c6831be2bbc93aa7bc858c01afed36c817e6c02998ce2361a38dec8e411f2b660ee091ab53e6dc6f34ace5c02",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": null
+    },
+    {
+      "id": "usr-horizon-owner",
+      "tenantId": "tenant-horizon",
+      "firstName": "Horizon",
+      "lastName": "Owner",
+      "email": "owner@horizon.demo",
+      "role": "owner",
+      "isActive": true,
+      "passwordHash": "8a6f7f316db453fd493921709ebe1b99:57fa130c1683c7311c8d6e1a5b3dab138589f7d8b46cf80ed9e23357f6233c5a21a615f50e67cd7c779fd28be32d4ce3b97a15c0c15f512261b32db6bfc83870",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": null
+    }
+  ],
+  "sessions": []
 }

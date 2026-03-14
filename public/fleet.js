@@ -1,4 +1,5 @@
-const { request, showToast, collectCheckedValues, formatMoney, vehicleLabel } = window.AppCommon;
+const { request, showToast, collectCheckedValues, formatMoney, vehicleLabel, sessionReady } =
+  window.AppCommon;
 
 const state = {
   vehicles: [],
@@ -210,6 +211,7 @@ function attachHandlers() {
 
 async function bootstrap() {
   try {
+    await sessionReady;
     attachHandlers();
     await loadFleetData();
   } catch (error) {

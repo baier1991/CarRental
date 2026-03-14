@@ -1,4 +1,4 @@
-const { request, formatMoney, showToast } = window.AppCommon;
+const { request, formatMoney, showToast, sessionReady } = window.AppCommon;
 
 function renderMetrics(dashboard) {
   const metrics = [
@@ -109,6 +109,7 @@ function renderOpenWorkOrders(workOrders, vehicles) {
 
 async function bootstrap() {
   try {
+    await sessionReady;
     const restoreButton = document.getElementById("restore-demo-data-btn");
     if (restoreButton) {
       restoreButton.addEventListener("click", async () => {
