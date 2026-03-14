@@ -325,6 +325,50 @@ function ensureAuthBootstrap(store) {
     password: "Horizon123!",
   });
 
+  const seedStore = readSeedStore();
+  function ensureTenantDemoRecords(tenantId) {
+    const tenantVehicles = nextStore.vehicles.filter((item) => item.tenantId === tenantId);
+    const tenantCustomers = nextStore.customers.filter((item) => item.tenantId === tenantId);
+    const tenantReservations = nextStore.reservations.filter((item) => item.tenantId === tenantId);
+    const tenantWorkOrders = nextStore.workOrders.filter((item) => item.tenantId === tenantId);
+
+    // Only auto-seed tenants that have no core operational data.
+    const hasCoreData =
+      tenantVehicles.length > 0 ||
+      tenantCustomers.length > 0 ||
+      tenantReservations.length > 0 ||
+      tenantWorkOrders.length > 0;
+    if (hasCoreData) {
+      return;
+    }
+
+    const collections = [
+      "vehicles",
+      "customers",
+      "reservations",
+      "vehicleDocuments",
+      "workOrders",
+    ];
+    for (const collection of collections) {
+      const seededItems = seedStore[collection].filter((item) => item.tenantId === tenantId);
+      if (seededItems.length === 0) {
+        continue;
+      }
+      const existingIds = new Set(nextStore[collection].map((item) => item.id));
+      const toAppend = seededItems
+        .filter((item) => !existingIds.has(item.id))
+        .map((item) => ({ ...item }));
+      if (toAppend.length > 0) {
+        nextStore[collection].push(...toAppend);
+        mutated = true;
+      }
+    }
+  }
+
+  for (const tenant of nextStore.tenants) {
+    ensureTenantDemoRecords(tenant.id);
+  }
+
   if (mutated) {
     writeStore(nextStore);
   }
