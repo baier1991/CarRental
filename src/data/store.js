@@ -136,14 +136,111 @@ function resetStoreWithSeed() {
 }
 
 function ensureAuthBootstrap(store) {
-  let nextStore = { ...store };
+  let nextStore = {
+    ...store,
+    tenants: Array.isArray(store.tenants) ? [...store.tenants] : [],
+    users: Array.isArray(store.users) ? [...store.users] : [],
+    sessions: Array.isArray(store.sessions) ? [...store.sessions] : [],
+    vehicles: Array.isArray(store.vehicles) ? [...store.vehicles] : [],
+    customers: Array.isArray(store.customers) ? [...store.customers] : [],
+    reservations: Array.isArray(store.reservations) ? [...store.reservations] : [],
+    vehicleDocuments: Array.isArray(store.vehicleDocuments) ? [...store.vehicleDocuments] : [],
+    workOrders: Array.isArray(store.workOrders) ? [...store.workOrders] : [],
+  };
   let mutated = false;
+  const acmeTenantId = "tenant-acme";
+  const horizonTenantId = "tenant-horizon";
+  const acmeOwnerEmail = "owner@acme.demo";
+  const horizonOwnerEmail = "owner@horizon.demo";
+
+  function remapTenantId(oldTenantId, newTenantId) {
+    if (!oldTenantId || !newTenantId || oldTenantId === newTenantId) {
+      return;
+    }
+
+    const remapCollection = (items) =>
+      items.map((item) =>
+        item.tenantId === oldTenantId
+          ? {
+              ...item,
+              tenantId: newTenantId,
+            }
+          : item
+      );
+
+    nextStore.vehicles = remapCollection(nextStore.vehicles);
+    nextStore.customers = remapCollection(nextStore.customers);
+    nextStore.reservations = remapCollection(nextStore.reservations);
+    nextStore.vehicleDocuments = remapCollection(nextStore.vehicleDocuments);
+    nextStore.workOrders = remapCollection(nextStore.workOrders);
+    nextStore.users = remapCollection(nextStore.users);
+    nextStore.sessions = remapCollection(nextStore.sessions);
+  }
+
+  function ensureTenant(tenant) {
+    const existing = nextStore.tenants.find((item) => item.id === tenant.id);
+    if (existing) {
+      return existing;
+    }
+
+    const created = {
+      ...tenant,
+      createdAt: tenant.createdAt || nowIso(),
+      updatedAt: nowIso(),
+      isActive: tenant.isActive !== false,
+    };
+    nextStore.tenants.push(created);
+    mutated = true;
+    return created;
+  }
+
+  function ensureTenantUser({ tenantId, email, firstName, lastName, role, password }) {
+    const normalizedEmail = String(email).toLowerCase();
+    const existing = nextStore.users.find(
+      (user) => user.tenantId === tenantId && String(user.email).toLowerCase() === normalizedEmail
+    );
+    if (existing) {
+      return existing;
+    }
+
+    const user = {
+      id: randomUUID(),
+      tenantId,
+      firstName,
+      lastName,
+      email: normalizedEmail,
+      role,
+      isActive: true,
+      passwordHash: hashPassword(password),
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+      lastLoginAt: null,
+    };
+    nextStore.users.push(user);
+    mutated = true;
+    return user;
+  }
+
+  const legacyDefaultTenant = nextStore.tenants.find((tenant) => tenant.id === "tenant-default");
+  const existingAcmeTenant = nextStore.tenants.find((tenant) => tenant.id === acmeTenantId);
+  if (legacyDefaultTenant && !existingAcmeTenant) {
+    legacyDefaultTenant.id = acmeTenantId;
+    legacyDefaultTenant.slug = "acme";
+    legacyDefaultTenant.name = "Acme Rentals";
+    legacyDefaultTenant.updatedAt = nowIso();
+    remapTenantId("tenant-default", acmeTenantId);
+    mutated = true;
+  } else if (legacyDefaultTenant && existingAcmeTenant) {
+    remapTenantId("tenant-default", acmeTenantId);
+    nextStore.tenants = nextStore.tenants.filter((tenant) => tenant.id !== "tenant-default");
+    mutated = true;
+  }
 
   if (!Array.isArray(nextStore.tenants) || nextStore.tenants.length === 0) {
     const bootstrapTenant = {
-      id: "tenant-default",
-      slug: "default",
-      name: "Default Tenant",
+      id: acmeTenantId,
+      slug: "acme",
+      name: "Acme Rentals",
       isActive: true,
       createdAt: nowIso(),
       updatedAt: nowIso(),
@@ -151,41 +248,82 @@ function ensureAuthBootstrap(store) {
     nextStore = {
       ...nextStore,
       tenants: [bootstrapTenant],
-      vehicles: nextStore.vehicles.map((item) => ({ ...item, tenantId: item.tenantId || bootstrapTenant.id })),
-      customers: nextStore.customers.map((item) => ({ ...item, tenantId: item.tenantId || bootstrapTenant.id })),
-      reservations: nextStore.reservations.map((item) => ({ ...item, tenantId: item.tenantId || bootstrapTenant.id })),
+      vehicles: nextStore.vehicles.map((item) => ({ ...item, tenantId: item.tenantId || acmeTenantId })),
+      customers: nextStore.customers.map((item) => ({ ...item, tenantId: item.tenantId || acmeTenantId })),
+      reservations: nextStore.reservations.map((item) => ({ ...item, tenantId: item.tenantId || acmeTenantId })),
       vehicleDocuments: nextStore.vehicleDocuments.map((item) => ({
         ...item,
-        tenantId: item.tenantId || bootstrapTenant.id,
+        tenantId: item.tenantId || acmeTenantId,
       })),
-      workOrders: nextStore.workOrders.map((item) => ({ ...item, tenantId: item.tenantId || bootstrapTenant.id })),
+      workOrders: nextStore.workOrders.map((item) => ({ ...item, tenantId: item.tenantId || acmeTenantId })),
     };
     mutated = true;
   }
 
-  if (!Array.isArray(nextStore.users) || nextStore.users.length === 0) {
-    const tenantId = nextStore.tenants[0].id;
-    const tenantSlug = nextStore.tenants[0].slug || "default";
-    const bootstrapPassword = process.env.BOOTSTRAP_DEMO_PASSWORD || "Password123!";
-    const bootstrapUser = {
-      id: randomUUID(),
-      tenantId,
-      firstName: "Owner",
-      lastName: "User",
-      email: `owner@${tenantSlug}.demo`,
-      role: "owner",
-      isActive: true,
-      passwordHash: hashPassword(bootstrapPassword),
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-      lastLoginAt: null,
-    };
-    nextStore = {
-      ...nextStore,
-      users: [bootstrapUser],
-    };
+  const acmeTenant = ensureTenant({
+    id: acmeTenantId,
+    slug: "acme",
+    name: "Acme Rentals",
+    isActive: true,
+  });
+  ensureTenant({
+    id: horizonTenantId,
+    slug: "horizon",
+    name: "Horizon Drive",
+    isActive: true,
+  });
+
+  const knownTenantIds = new Set(nextStore.tenants.map((tenant) => tenant.id));
+  const fillTenantId = (items) =>
+    items.map((item) => {
+      if (item.tenantId && knownTenantIds.has(item.tenantId)) {
+        return item;
+      }
+      mutated = true;
+      return {
+        ...item,
+        tenantId: acmeTenant.id,
+      };
+    });
+  nextStore.vehicles = fillTenantId(nextStore.vehicles);
+  nextStore.customers = fillTenantId(nextStore.customers);
+  nextStore.reservations = fillTenantId(nextStore.reservations);
+  nextStore.vehicleDocuments = fillTenantId(nextStore.vehicleDocuments);
+  nextStore.workOrders = fillTenantId(nextStore.workOrders);
+
+  const defaultOwnerUser = nextStore.users.find(
+    (user) => String(user.email).toLowerCase() === "owner@default.demo"
+  );
+  const existingAcmeUser = nextStore.users.find(
+    (user) => String(user.email).toLowerCase() === acmeOwnerEmail
+  );
+  if (defaultOwnerUser && !existingAcmeUser) {
+    defaultOwnerUser.tenantId = acmeTenant.id;
+    defaultOwnerUser.email = acmeOwnerEmail;
+    defaultOwnerUser.role = "owner";
+    defaultOwnerUser.isActive = true;
+    defaultOwnerUser.passwordHash = hashPassword("Acme123!");
+    defaultOwnerUser.updatedAt = nowIso();
     mutated = true;
   }
+
+  ensureTenantUser({
+    tenantId: acmeTenant.id,
+    email: acmeOwnerEmail,
+    firstName: "Acme",
+    lastName: "Owner",
+    role: "owner",
+    password: "Acme123!",
+  });
+
+  ensureTenantUser({
+    tenantId: horizonTenantId,
+    email: horizonOwnerEmail,
+    firstName: "Horizon",
+    lastName: "Owner",
+    role: "owner",
+    password: "Horizon123!",
+  });
 
   if (mutated) {
     writeStore(nextStore);
