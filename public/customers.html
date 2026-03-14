@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Rental OS - Customers</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260314" />
   </head>
   <body data-page="customers">
     <div class="app-shell">
@@ -33,7 +33,7 @@
           <section class="grid-2">
             <article class="card">
               <h2>Add Customer</h2>
-              <form id="customer-form" class="stack">
+              <form id="customer-form" class="stack" method="post" action="/customers">
             <div class="grid-2">
               <label>First Name <input name="firstName" required /></label>
               <label>Last Name <input name="lastName" required /></label>
@@ -64,7 +64,7 @@
       </div>
     </div>
 
-    <script src="/common.js"></script>
-    <script src="/customers.js"></script>
+    <script src="/common.js?v=20260314"></script>
+    <script src="/customers.js?v=20260314"></script>
   </body>
 </html>

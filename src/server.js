@@ -59,6 +59,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 const publicDirectory = path.resolve(__dirname, "../public");
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/") || req.path.startsWith("/uploads/")) {
+    return next();
+  }
+
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  return next();
+});
 
 function ensureUploadDirectory() {
   if (!fs.existsSync(UPLOAD_DIRECTORY)) {
@@ -1081,30 +1091,30 @@ app.patch("/api/work-orders/:workOrderId", requireAuth, (req, res) => {
   return res.json(workOrder);
 });
 
-app.get("/api/customers", requireAuth, (req, res) => {
-  return res.json(forTenant(req.store.customers, req.tenantId));
-});
-
-app.post("/api/customers", requireAuth, (req, res) => {
-  const { firstName, lastName, email, phone, licenseNumber } = req.body;
+function createCustomerRecord(store, tenantId, payload) {
+  const { firstName, lastName, email, phone, licenseNumber } = payload || {};
   if (!firstName || !lastName || !email || !phone || !licenseNumber) {
-    return sendValidationError(
-      res,
-      "firstName, lastName, email, phone, and licenseNumber are required."
-    );
+    return {
+      ok: false,
+      status: 400,
+      error: "firstName, lastName, email, phone, and licenseNumber are required.",
+    };
   }
 
-  const store = req.store;
-  const duplicateCustomer = forTenant(store.customers, req.tenantId).some(
+  const duplicateCustomer = forTenant(store.customers, tenantId).some(
     (customer) => customer.email.toLowerCase() === String(email).toLowerCase()
   );
   if (duplicateCustomer) {
-    return res.status(409).json({ error: "Customer with this email already exists." });
+    return {
+      ok: false,
+      status: 409,
+      error: "Customer with this email already exists.",
+    };
   }
 
   const customer = {
     id: randomUUID(),
-    tenantId: req.tenantId,
+    tenantId,
     firstName: String(firstName).trim(),
     lastName: String(lastName).trim(),
     email: String(email).trim().toLowerCase(),
@@ -1116,7 +1126,30 @@ app.post("/api/customers", requireAuth, (req, res) => {
 
   store.customers.push(customer);
   writeStore(store);
-  return res.status(201).json(customer);
+  return {
+    ok: true,
+    customer,
+  };
+}
+
+app.get("/api/customers", requireAuth, (req, res) => {
+  return res.json(forTenant(req.store.customers, req.tenantId));
+});
+
+app.post("/api/customers", requireAuth, (req, res) => {
+  const result = createCustomerRecord(req.store, req.tenantId, req.body);
+  if (!result.ok) {
+    return res.status(result.status).json({ error: result.error });
+  }
+  return res.status(201).json(result.customer);
+});
+
+app.post("/customers", requireAuth, (req, res) => {
+  const result = createCustomerRecord(req.store, req.tenantId, req.body);
+  if (!result.ok) {
+    return res.redirect(`/customers.html?error=${encodeURIComponent(result.error)}`);
+  }
+  return res.redirect("/customers.html?status=customer_added");
 });
 
 app.get("/api/reservations", requireAuth, (req, res) => {

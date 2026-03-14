@@ -4,6 +4,7 @@ const state = {
   customers: [],
   reservations: [],
 };
+const searchParams = new URLSearchParams(window.location.search);
 
 function setFormMessage(message, isError = false) {
   const container = document.getElementById("customer-form-message");
@@ -116,6 +117,13 @@ async function bootstrap() {
     await sessionReady;
     attachHandlers();
     await loadCustomers();
+    if (searchParams.get("status") === "customer_added") {
+      setFormMessage("Customer saved successfully.");
+    }
+    if (searchParams.get("error")) {
+      setFormMessage(searchParams.get("error"), true);
+      showToast(searchParams.get("error"), true);
+    }
   } catch (error) {
     showToast(error.message, true);
   }
