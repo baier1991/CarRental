@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Rental OS - Customers</title>
-    <link rel="stylesheet" href="/styles.css?v=20260316" />
+    <link rel="stylesheet" href="/styles.css?v=20260317" />
   </head>
   <body data-page="customers">
     <div class="app-shell">
@@ -64,7 +64,100 @@
       </div>
     </div>
 
-    <script src="/common.js?v=20260316"></script>
-    <script src="/customers.js?v=20260316"></script>
+    <script>
+      (function () {
+        function escapeHtml(value) {
+          return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function renderLegacyCustomers(customers) {
+          var listContainer = document.getElementById("customer-list");
+          var metricsContainer = document.getElementById("customer-metrics");
+          if (!listContainer || !metricsContainer) {
+            return;
+          }
+
+          if (!customers || !customers.length) {
+            listContainer.innerHTML = "<p>No customers yet.</p>";
+            metricsContainer.innerHTML =
+              '<div class="metric"><div class="label">Total Customers</div><div class="value">0</div></div>';
+            return;
+          }
+
+          var rows = [];
+          for (var i = 0; i < customers.length; i += 1) {
+            var customer = customers[i] || {};
+            var createdAt = customer.createdAt ? String(customer.createdAt).slice(0, 10) : "n/a";
+            rows.push(
+              "<tr>" +
+                "<td>" +
+                escapeHtml((customer.firstName || "") + " " + (customer.lastName || "")) +
+                "</td>" +
+                "<td>" +
+                escapeHtml(customer.email || "") +
+                "</td>" +
+                "<td>" +
+                escapeHtml(customer.phone || "") +
+                "</td>" +
+                "<td>" +
+                escapeHtml(customer.licenseNumber || "") +
+                "</td>" +
+                "<td>" +
+                escapeHtml(createdAt) +
+                "</td>" +
+                "</tr>"
+            );
+          }
+
+          listContainer.innerHTML =
+            "<table>" +
+            "<thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>License</th><th>Created</th></tr></thead>" +
+            "<tbody>" +
+            rows.join("") +
+            "</tbody>" +
+            "</table>";
+
+          metricsContainer.innerHTML =
+            '<div class="metric"><div class="label">Total Customers</div><div class="value">' +
+            customers.length +
+            "</div></div>";
+        }
+
+        function loadCustomersLegacy() {
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "/api/customers", true);
+          xhr.withCredentials = true;
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+              return;
+            }
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                var parsed = JSON.parse(xhr.responseText || "[]");
+                if (Object.prototype.toString.call(parsed) === "[object Array]") {
+                  renderLegacyCustomers(parsed);
+                }
+              } catch (_err) {
+                // Ignore parse errors and let main bundle try rendering.
+              }
+            }
+          };
+          xhr.send();
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", loadCustomersLegacy);
+        } else {
+          loadCustomersLegacy();
+        }
+      })();
+    </script>
+    <script src="/common.js?v=20260317"></script>
+    <script src="/customers.js?v=20260317"></script>
   </body>
 </html>
