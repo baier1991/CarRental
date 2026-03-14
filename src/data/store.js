@@ -384,14 +384,20 @@ function ensureAuthBootstrap(store) {
     const tenantCustomers = nextStore.customers.filter((item) => item.tenantId === tenantId);
     const tenantReservations = nextStore.reservations.filter((item) => item.tenantId === tenantId);
     const tenantWorkOrders = nextStore.workOrders.filter((item) => item.tenantId === tenantId);
+    const tenantDocuments = nextStore.vehicleDocuments.filter((item) => item.tenantId === tenantId);
 
-    // Only auto-seed tenants that have no core operational data.
-    const hasCoreData =
-      tenantVehicles.length > 0 ||
-      tenantCustomers.length > 0 ||
-      tenantReservations.length > 0 ||
-      tenantWorkOrders.length > 0;
-    if (hasCoreData) {
+    const needsVehicles = tenantVehicles.length === 0;
+    const needsCustomers = tenantCustomers.length === 0;
+    const needsReservations = tenantReservations.length === 0;
+    const needsWorkOrders = tenantWorkOrders.length === 0;
+    const needsDocuments = tenantDocuments.length === 0;
+    if (
+      !needsVehicles &&
+      !needsCustomers &&
+      !needsReservations &&
+      !needsWorkOrders &&
+      !needsDocuments
+    ) {
       return;
     }
 
@@ -411,46 +417,81 @@ function ensureAuthBootstrap(store) {
       .filter((item) => item.tenantId === templateTenantId)
       .map((item) => ({ ...item, tenantId }));
 
-    const vehicles = createIdCollisionSafeClone("vehicles", templateVehicles);
-    const customers = createIdCollisionSafeClone("customers", templateCustomers);
+    const vehicleIdMap = new Map();
+    const customerIdMap = new Map();
+    for (const item of tenantVehicles) {
+      vehicleIdMap.set(item.id, item.id);
+    }
+    for (const item of tenantCustomers) {
+      customerIdMap.set(item.id, item.id);
+    }
 
-    const vehicleIdMap = new Map(
-      templateVehicles.map((item, index) => [item.id, vehicles[index].id])
-    );
-    const customerIdMap = new Map(
-      templateCustomers.map((item, index) => [item.id, customers[index].id])
-    );
+    const vehicles = needsVehicles ? createIdCollisionSafeClone("vehicles", templateVehicles) : [];
+    const customers = needsCustomers ? createIdCollisionSafeClone("customers", templateCustomers) : [];
 
-    const reservations = createIdCollisionSafeClone(
-      "reservations",
-      templateReservations.map((item) => ({
-        ...item,
-        vehicleId: vehicleIdMap.get(item.vehicleId) || item.vehicleId,
-        customerId: customerIdMap.get(item.customerId) || item.customerId,
-      }))
-    );
+    if (needsVehicles) {
+      for (let index = 0; index < templateVehicles.length; index += 1) {
+        vehicleIdMap.set(templateVehicles[index].id, vehicles[index].id);
+      }
+    }
+    if (needsCustomers) {
+      for (let index = 0; index < templateCustomers.length; index += 1) {
+        customerIdMap.set(templateCustomers[index].id, customers[index].id);
+      }
+    }
 
-    const documents = createIdCollisionSafeClone(
-      "vehicleDocuments",
-      templateDocuments.map((item) => ({
-        ...item,
-        vehicleId: vehicleIdMap.get(item.vehicleId) || item.vehicleId,
-      }))
-    );
+    const reservations = needsReservations
+      ? createIdCollisionSafeClone(
+          "reservations",
+          templateReservations
+            .map((item) => ({
+              ...item,
+              vehicleId: vehicleIdMap.get(item.vehicleId),
+              customerId: customerIdMap.get(item.customerId),
+            }))
+            .filter((item) => item.vehicleId && item.customerId)
+        )
+      : [];
 
-    const workOrders = createIdCollisionSafeClone(
-      "workOrders",
-      templateWorkOrders.map((item) => ({
-        ...item,
-        vehicleId: vehicleIdMap.get(item.vehicleId) || item.vehicleId,
-      }))
-    );
+    const documents = needsDocuments
+      ? createIdCollisionSafeClone(
+          "vehicleDocuments",
+          templateDocuments
+            .map((item) => ({
+              ...item,
+              vehicleId: vehicleIdMap.get(item.vehicleId),
+            }))
+            .filter((item) => item.vehicleId)
+        )
+      : [];
 
-    nextStore.vehicles.push(...vehicles);
-    nextStore.customers.push(...customers);
-    nextStore.reservations.push(...reservations);
-    nextStore.vehicleDocuments.push(...documents);
-    nextStore.workOrders.push(...workOrders);
+    const workOrders = needsWorkOrders
+      ? createIdCollisionSafeClone(
+          "workOrders",
+          templateWorkOrders
+            .map((item) => ({
+              ...item,
+              vehicleId: vehicleIdMap.get(item.vehicleId),
+            }))
+            .filter((item) => item.vehicleId)
+        )
+      : [];
+
+    if (vehicles.length > 0) {
+      nextStore.vehicles.push(...vehicles);
+    }
+    if (customers.length > 0) {
+      nextStore.customers.push(...customers);
+    }
+    if (reservations.length > 0) {
+      nextStore.reservations.push(...reservations);
+    }
+    if (documents.length > 0) {
+      nextStore.vehicleDocuments.push(...documents);
+    }
+    if (workOrders.length > 0) {
+      nextStore.workOrders.push(...workOrders);
+    }
     if (
       vehicles.length > 0 ||
       customers.length > 0 ||
