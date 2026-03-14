@@ -53,15 +53,18 @@ function renderDocuments() {
       <tbody>
         ${state.documents
           .map(
-            (document) => `
+            (document) => {
+              const uploadedAt = document && document.uploadedAt ? String(document.uploadedAt).slice(0, 10) : "n/a";
+              return `
             <tr>
               <td>${document.documentType}</td>
               <td><a href="${document.relativePath}" target="_blank" rel="noreferrer">${document.originalName}</a></td>
-              <td>${document.uploadedAt?.slice(0, 10) || "n/a"}</td>
+              <td>${uploadedAt}</td>
               <td>${document.expiryDate || "n/a"}</td>
               <td><button type="button" data-delete-document-id="${document.id}">Delete</button></td>
             </tr>
-          `
+          `;
+            }
           )
           .join("")}
       </tbody>
@@ -136,7 +139,8 @@ async function loadMaintenanceData() {
   state.workOrders = workOrders;
   populateVehicleSelects();
   renderWorkOrders();
-  await loadDocuments(state.selectedVehicleId || state.vehicles[0]?.id || null);
+  const fallbackVehicleId = state.vehicles.length > 0 ? state.vehicles[0].id : null;
+  await loadDocuments(state.selectedVehicleId || fallbackVehicleId || null);
 }
 
 function attachHandlers() {

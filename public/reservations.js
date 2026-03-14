@@ -48,16 +48,26 @@ function renderReservations() {
       <tbody>
         ${state.reservations
           .map(
-            (reservation) => `
+            (reservation) => {
+              const totalPrice =
+                reservation && reservation.pricing && typeof reservation.pricing.total === "number"
+                  ? reservation.pricing.total
+                  : 0;
+              const addOnLabel =
+                reservation && Array.isArray(reservation.addOns) && reservation.addOns.length
+                  ? reservation.addOns.join(", ")
+                  : "none";
+              return `
             <tr>
               <td>${customerMap.get(reservation.customerId) || reservation.customerId}</td>
               <td>${vehicleMap.get(reservation.vehicleId) || reservation.vehicleId}</td>
               <td>${reservation.startDate} → ${reservation.endDate}</td>
               <td><span class="badge">${reservation.status}</span></td>
-              <td>${formatMoney(reservation?.pricing?.total || 0)}</td>
-              <td>${reservation.addOns.length ? reservation.addOns.join(", ") : "none"}</td>
+              <td>${formatMoney(totalPrice)}</td>
+              <td>${addOnLabel}</td>
             </tr>
-          `
+          `;
+            }
           )
           .join("")}
       </tbody>

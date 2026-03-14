@@ -97,7 +97,7 @@ function populateEditForm(vehicleId) {
     if (!form.elements[field]) {
       return;
     }
-    form.elements[field].value = vehicle[field] ?? "";
+    form.elements[field].value = vehicle[field] == null ? "" : vehicle[field];
   });
 
   const featureSet = new Set(Array.isArray(vehicle.features) ? vehicle.features : []);
@@ -169,7 +169,8 @@ function attachHandlers() {
   });
 
   csvFile.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
+    const hasFiles = event && event.target && event.target.files && event.target.files.length > 0;
+    const file = hasFiles ? event.target.files[0] : null;
     if (!file) {
       return;
     }
@@ -195,7 +196,7 @@ function attachHandlers() {
           result.errors.length
             ? result.errors
                 .slice(0, 6)
-                .map((item) => `Row ${item.row ?? "-"}: ${item.error}`)
+                .map((item) => `Row ${item && item.row != null ? item.row : "-"}: ${item.error}`)
                 .join("<br />")
             : "No row errors."
         }

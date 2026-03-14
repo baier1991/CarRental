@@ -39,8 +39,13 @@ async function request(url, options = {}) {
   }
 
   if (!response.ok) {
+    const hasErrorMessage = data && typeof data === "object" && "error" in data;
     const message =
-      typeof data === "string" ? data || `Request failed: ${response.status}` : data?.error || `Request failed: ${response.status}`;
+      typeof data === "string"
+        ? data || `Request failed: ${response.status}`
+        : hasErrorMessage
+          ? data.error
+          : `Request failed: ${response.status}`;
     throw new Error(message);
   }
 

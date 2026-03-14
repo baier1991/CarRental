@@ -38,15 +38,18 @@ function renderCustomerList() {
       <tbody>
         ${state.customers
           .map(
-            (customer) => `
+            (customer) => {
+              const createdAt = customer && customer.createdAt ? String(customer.createdAt).slice(0, 10) : "n/a";
+              return `
             <tr>
               <td>${customer.firstName} ${customer.lastName}</td>
               <td>${customer.email}</td>
               <td>${customer.phone}</td>
               <td>${customer.licenseNumber}</td>
-              <td>${customer.createdAt?.slice(0, 10) || "n/a"}</td>
+              <td>${createdAt}</td>
             </tr>
-          `
+          `;
+            }
           )
           .join("")}
       </tbody>
