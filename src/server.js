@@ -4,7 +4,7 @@ const { randomUUID } = require("node:crypto");
 const express = require("express");
 const multer = require("multer");
 
-const { readStore, writeStore, resetStoreWithSeed } = require("./data/store");
+const { readStore, writeStore, readSeedStore, resetStoreWithSeed } = require("./data/store");
 const { calculateQuote, ADD_ON_DAILY_RATE, INSURANCE_DAILY_RATE } = require("./domain/pricing");
 const {
   hasVehicleConflict,
@@ -283,6 +283,116 @@ function requireRoles(...roles) {
   };
 }
 
+function cloneWithUniqueIds(existingItems, itemsToClone) {
+  const existingIds = new Set(existingItems.map((item) => item.id));
+  const idMap = new Map();
+  const cloned = itemsToClone.map((item) => {
+    let nextId = item.id;
+    if (!nextId || existingIds.has(nextId)) {
+      nextId = randomUUID();
+    }
+    existingIds.add(nextId);
+    idMap.set(item.id, nextId);
+    return {
+      ...item,
+      id: nextId,
+    };
+  });
+  return { cloned, idMap };
+}
+
+function reseedTenantOperationalData(store, tenant) {
+  const seedStore = readSeedStore();
+  const tenantSlug = String(tenant.slug || "").toLowerCase();
+  const templateTenant = seedStore.tenants.find(
+    (seedTenant) => String(seedTenant.slug || "").toLowerCase() === tenantSlug
+  );
+  if (!templateTenant) {
+    return { applied: false, reason: `No seed template for tenant slug '${tenantSlug}'.` };
+  }
+
+  const templateTenantId = templateTenant.id;
+  store.vehicles = store.vehicles.filter((item) => item.tenantId !== tenant.id);
+  store.customers = store.customers.filter((item) => item.tenantId !== tenant.id);
+  store.reservations = store.reservations.filter((item) => item.tenantId !== tenant.id);
+  store.vehicleDocuments = store.vehicleDocuments.filter((item) => item.tenantId !== tenant.id);
+  store.workOrders = store.workOrders.filter((item) => item.tenantId !== tenant.id);
+
+  const templateVehicles = seedStore.vehicles
+    .filter((item) => item.tenantId === templateTenantId)
+    .map((item) => ({ ...item, tenantId: tenant.id }));
+  const templateCustomers = seedStore.customers
+    .filter((item) => item.tenantId === templateTenantId)
+    .map((item) => ({ ...item, tenantId: tenant.id }));
+  const templateReservations = seedStore.reservations
+    .filter((item) => item.tenantId === templateTenantId)
+    .map((item) => ({ ...item, tenantId: tenant.id }));
+  const templateDocuments = seedStore.vehicleDocuments
+    .filter((item) => item.tenantId === templateTenantId)
+    .map((item) => ({ ...item, tenantId: tenant.id }));
+  const templateWorkOrders = seedStore.workOrders
+    .filter((item) => item.tenantId === templateTenantId)
+    .map((item) => ({ ...item, tenantId: tenant.id }));
+
+  const { cloned: vehicles, idMap: vehicleIdMap } = cloneWithUniqueIds(
+    store.vehicles,
+    templateVehicles
+  );
+  const { cloned: customers, idMap: customerIdMap } = cloneWithUniqueIds(
+    store.customers,
+    templateCustomers
+  );
+
+  const { cloned: reservations } = cloneWithUniqueIds(
+    store.reservations,
+    templateReservations
+      .map((item) => ({
+        ...item,
+        vehicleId: vehicleIdMap.get(item.vehicleId),
+        customerId: customerIdMap.get(item.customerId),
+      }))
+      .filter((item) => item.vehicleId && item.customerId)
+  );
+
+  const { cloned: documents } = cloneWithUniqueIds(
+    store.vehicleDocuments,
+    templateDocuments
+      .map((item) => ({
+        ...item,
+        vehicleId: vehicleIdMap.get(item.vehicleId),
+      }))
+      .filter((item) => item.vehicleId)
+  );
+
+  const { cloned: workOrders } = cloneWithUniqueIds(
+    store.workOrders,
+    templateWorkOrders
+      .map((item) => ({
+        ...item,
+        vehicleId: vehicleIdMap.get(item.vehicleId),
+      }))
+      .filter((item) => item.vehicleId)
+  );
+
+  store.vehicles.push(...vehicles);
+  store.customers.push(...customers);
+  store.reservations.push(...reservations);
+  store.vehicleDocuments.push(...documents);
+  store.workOrders.push(...workOrders);
+  writeStore(store);
+
+  return {
+    applied: true,
+    counts: {
+      vehicles: vehicles.length,
+      customers: customers.length,
+      reservations: reservations.length,
+      vehicleDocuments: documents.length,
+      workOrders: workOrders.length,
+    },
+  };
+}
+
 function authenticateTenantUser(store, { tenantSlug, email, password }) {
   const normalizedTenantSlug = String(tenantSlug || "")
     .trim()
@@ -518,6 +628,55 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
       slug: req.auth.tenant.slug,
     },
   });
+});
+
+app.get("/api/debug/tenant-summary", requireAuth, (req, res) => {
+  const tenantId = req.tenantId;
+  const vehicles = forTenant(req.store.vehicles, tenantId);
+  const customers = forTenant(req.store.customers, tenantId);
+  const reservations = forTenant(req.store.reservations, tenantId);
+  const workOrders = forTenant(req.store.workOrders, tenantId);
+  return res.json({
+    tenant: {
+      id: req.auth.tenant.id,
+      slug: req.auth.tenant.slug,
+      name: req.auth.tenant.name,
+    },
+    user: sanitizeUser(req.auth.user),
+    counts: {
+      vehicles: vehicles.length,
+      customers: customers.length,
+      reservations: reservations.length,
+      workOrders: workOrders.length,
+    },
+    samples: {
+      vehiclePlates: vehicles.slice(0, 3).map((item) => item.plateNumber),
+      customerEmails: customers.slice(0, 3).map((item) => item.email),
+    },
+  });
+});
+
+app.post("/api/admin/reseed-tenant-demo", requireAuth, requireRoles("owner"), (req, res) => {
+  const result = reseedTenantOperationalData(req.store, req.auth.tenant);
+  if (!result.applied) {
+    return res.status(400).json({ error: result.reason });
+  }
+  return res.json({
+    success: true,
+    tenant: {
+      id: req.auth.tenant.id,
+      slug: req.auth.tenant.slug,
+    },
+    counts: result.counts,
+  });
+});
+
+app.get("/admin/reseed-tenant-demo", requireAuth, requireRoles("owner"), (req, res) => {
+  const result = reseedTenantOperationalData(req.store, req.auth.tenant);
+  if (!result.applied) {
+    return res.redirect("/?status=reseed_failed");
+  }
+  return res.redirect("/?status=reseed_done");
 });
 
 app.post("/api/admin/seed-demo", requireAuth, requireRoles("owner"), (_req, res) => {

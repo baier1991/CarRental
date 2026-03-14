@@ -517,6 +517,7 @@ function ensureAuthBootstrap(store) {
 module.exports = {
   readStore,
   writeStore,
+  readSeedStore,
   resetStoreWithSeed,
   STORE_FILE_PATH,
   SEED_STORE_FILE_PATH,

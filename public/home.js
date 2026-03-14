@@ -110,6 +110,13 @@ function renderOpenWorkOrders(workOrders, vehicles) {
 async function bootstrap() {
   try {
     await sessionReady;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("status") === "reseed_done") {
+      showToast("Tenant demo data reseeded.");
+    } else if (params.get("status") === "reseed_failed") {
+      showToast("Tenant reseed failed.", true);
+    }
+
     const restoreButton = document.getElementById("restore-demo-data-btn");
     if (restoreButton) {
       restoreButton.addEventListener("click", async () => {
