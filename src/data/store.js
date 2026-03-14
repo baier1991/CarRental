@@ -326,7 +326,40 @@ function ensureAuthBootstrap(store) {
   });
 
   const seedStore = readSeedStore();
-  function ensureTenantDemoRecords(tenantId) {
+  const templateTenantIdBySlug = {
+    acme: "tenant-acme",
+    horizon: "tenant-horizon",
+  };
+
+  function createIdCollisionSafeClone(collectionName, items) {
+    const existingIds = new Set(nextStore[collectionName].map((item) => item.id));
+    const idMap = new Map();
+    return items.map((item) => {
+      const originalId = item.id;
+      if (!existingIds.has(originalId) && !idMap.has(originalId)) {
+        existingIds.add(originalId);
+        idMap.set(originalId, originalId);
+        return { ...item };
+      }
+
+      const nextId = randomUUID();
+      idMap.set(originalId, nextId);
+      existingIds.add(nextId);
+      return {
+        ...item,
+        id: nextId,
+      };
+    });
+  }
+
+  function ensureTenantDemoRecords(tenant) {
+    const tenantId = tenant.id;
+    const tenantSlug = String(tenant.slug || "").toLowerCase();
+    const templateTenantId = templateTenantIdBySlug[tenantSlug];
+    if (!templateTenantId) {
+      return;
+    }
+
     const tenantVehicles = nextStore.vehicles.filter((item) => item.tenantId === tenantId);
     const tenantCustomers = nextStore.customers.filter((item) => item.tenantId === tenantId);
     const tenantReservations = nextStore.reservations.filter((item) => item.tenantId === tenantId);
@@ -342,31 +375,75 @@ function ensureAuthBootstrap(store) {
       return;
     }
 
-    const collections = [
-      "vehicles",
-      "customers",
+    const templateVehicles = seedStore.vehicles
+      .filter((item) => item.tenantId === templateTenantId)
+      .map((item) => ({ ...item, tenantId }));
+    const templateCustomers = seedStore.customers
+      .filter((item) => item.tenantId === templateTenantId)
+      .map((item) => ({ ...item, tenantId }));
+    const templateReservations = seedStore.reservations
+      .filter((item) => item.tenantId === templateTenantId)
+      .map((item) => ({ ...item, tenantId }));
+    const templateDocuments = seedStore.vehicleDocuments
+      .filter((item) => item.tenantId === templateTenantId)
+      .map((item) => ({ ...item, tenantId }));
+    const templateWorkOrders = seedStore.workOrders
+      .filter((item) => item.tenantId === templateTenantId)
+      .map((item) => ({ ...item, tenantId }));
+
+    const vehicles = createIdCollisionSafeClone("vehicles", templateVehicles);
+    const customers = createIdCollisionSafeClone("customers", templateCustomers);
+
+    const vehicleIdMap = new Map(
+      templateVehicles.map((item, index) => [item.id, vehicles[index].id])
+    );
+    const customerIdMap = new Map(
+      templateCustomers.map((item, index) => [item.id, customers[index].id])
+    );
+
+    const reservations = createIdCollisionSafeClone(
       "reservations",
+      templateReservations.map((item) => ({
+        ...item,
+        vehicleId: vehicleIdMap.get(item.vehicleId) || item.vehicleId,
+        customerId: customerIdMap.get(item.customerId) || item.customerId,
+      }))
+    );
+
+    const documents = createIdCollisionSafeClone(
       "vehicleDocuments",
+      templateDocuments.map((item) => ({
+        ...item,
+        vehicleId: vehicleIdMap.get(item.vehicleId) || item.vehicleId,
+      }))
+    );
+
+    const workOrders = createIdCollisionSafeClone(
       "workOrders",
-    ];
-    for (const collection of collections) {
-      const seededItems = seedStore[collection].filter((item) => item.tenantId === tenantId);
-      if (seededItems.length === 0) {
-        continue;
-      }
-      const existingIds = new Set(nextStore[collection].map((item) => item.id));
-      const toAppend = seededItems
-        .filter((item) => !existingIds.has(item.id))
-        .map((item) => ({ ...item }));
-      if (toAppend.length > 0) {
-        nextStore[collection].push(...toAppend);
-        mutated = true;
-      }
+      templateWorkOrders.map((item) => ({
+        ...item,
+        vehicleId: vehicleIdMap.get(item.vehicleId) || item.vehicleId,
+      }))
+    );
+
+    nextStore.vehicles.push(...vehicles);
+    nextStore.customers.push(...customers);
+    nextStore.reservations.push(...reservations);
+    nextStore.vehicleDocuments.push(...documents);
+    nextStore.workOrders.push(...workOrders);
+    if (
+      vehicles.length > 0 ||
+      customers.length > 0 ||
+      reservations.length > 0 ||
+      documents.length > 0 ||
+      workOrders.length > 0
+    ) {
+      mutated = true;
     }
   }
 
   for (const tenant of nextStore.tenants) {
-    ensureTenantDemoRecords(tenant.id);
+    ensureTenantDemoRecords(tenant);
   }
 
   if (mutated) {
