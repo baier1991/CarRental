@@ -276,6 +276,14 @@ app.get("/login.html", (_req, res) => {
   return res.sendFile(path.resolve(publicDirectory, "login.html"));
 });
 
+app.get("/login", (_req, res) => {
+  return res.redirect("/login.html");
+});
+
+app.get(["/home", "/dashboard"], (_req, res) => {
+  return res.redirect("/index.html");
+});
+
 app.get(PROTECTED_PAGE_PATHS, (req, res, next) => {
   const store = readStore();
   const authContext = resolveAuthContext(store, req);
@@ -288,6 +296,29 @@ app.get(PROTECTED_PAGE_PATHS, (req, res, next) => {
 });
 
 app.use(express.static(publicDirectory));
+
+app.use((req, res, next) => {
+  if (req.method !== "GET") {
+    return next();
+  }
+
+  if (req.path.startsWith("/api/") || req.path.startsWith("/uploads/")) {
+    return next();
+  }
+
+  const extension = path.extname(req.path);
+  if (extension && extension !== ".html") {
+    return next();
+  }
+
+  const store = readStore();
+  const authContext = resolveAuthContext(store, req);
+  if (!authContext) {
+    return res.redirect("/login.html");
+  }
+
+  return res.sendFile(path.resolve(publicDirectory, "index.html"));
+});
 
 function calculateDashboard(store) {
   const activeReservations = store.reservations.filter((reservation) =>

@@ -13,10 +13,11 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify(payload),
       suppressAuthRedirect: true,
     });
+    await request("/api/auth/me", { suppressAuthRedirect: true });
     message.textContent = "Login successful. Redirecting...";
-    window.location.replace("/");
+    window.location.replace("/index.html");
   } catch (error) {
     showToast(error.message, true);
-    message.innerHTML = `<span class="error-text">${error.message}</span>`;
+    message.innerHTML = `<span class="error-text">${error.message}. Please verify tenant slug, email, and password.</span>`;
   }
 });
