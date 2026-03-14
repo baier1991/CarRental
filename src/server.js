@@ -56,6 +56,7 @@ const PROTECTED_PAGE_PATHS = [
 ];
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 const publicDirectory = path.resolve(__dirname, "../public");
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 
@@ -272,12 +273,87 @@ function requireRoles(...roles) {
   };
 }
 
-app.get("/login.html", (_req, res) => {
+function authenticateTenantUser(store, { tenantSlug, email, password }) {
+  const normalizedTenantSlug = String(tenantSlug || "")
+    .trim()
+    .toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  const tenant = store.tenants.find(
+    (item) => String(item.slug || "").toLowerCase() === normalizedTenantSlug && item.isActive !== false
+  );
+  if (!tenant) {
+    return null;
+  }
+
+  const user = store.users.find(
+    (item) =>
+      item.tenantId === tenant.id &&
+      String(item.email || "").toLowerCase() === normalizedEmail &&
+      item.isActive !== false
+  );
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return null;
+  }
+
+  return { tenant, user };
+}
+
+function createSessionForUser(store, user, tenant) {
+  const token = createSessionToken();
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_MS).toISOString();
+  store.sessions = store.sessions.filter((session) => session.userId !== user.id);
+  store.sessions.push({
+    id: randomUUID(),
+    token,
+    userId: user.id,
+    tenantId: tenant.id,
+    createdAt: nowIso(),
+    expiresAt,
+  });
+  user.lastLoginAt = nowIso();
+  user.updatedAt = nowIso();
+  writeStore(store);
+  return token;
+}
+
+app.get("/login.html", (req, res) => {
+  const { tenantSlug, email, password } = req.query || {};
+  if (tenantSlug && email && password) {
+    const store = readStore();
+    const auth = authenticateTenantUser(store, { tenantSlug, email, password });
+    if (auth) {
+      const token = createSessionForUser(store, auth.user, auth.tenant);
+      setSessionCookie(res, token);
+      return res.redirect("/index.html");
+    }
+    return res.redirect("/login.html?error=invalid_credentials");
+  }
+
   return res.sendFile(path.resolve(publicDirectory, "login.html"));
 });
 
 app.get("/login", (_req, res) => {
   return res.redirect("/login.html");
+});
+
+app.post("/login", (req, res) => {
+  const { tenantSlug, email, password } = req.body || {};
+  if (!tenantSlug || !email || !password) {
+    return res.redirect("/login.html?error=missing_fields");
+  }
+
+  const store = readStore();
+  const auth = authenticateTenantUser(store, { tenantSlug, email, password });
+  if (!auth) {
+    return res.redirect("/login.html?error=invalid_credentials");
+  }
+
+  const token = createSessionForUser(store, auth.user, auth.tenant);
+  setSessionCookie(res, token);
+  return res.redirect("/index.html");
 });
 
 app.get(["/home", "/dashboard"], (_req, res) => {
@@ -398,40 +474,12 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   const store = readStore();
-  const normalizedTenantSlug = String(tenantSlug).trim().toLowerCase();
-  const tenant = store.tenants.find(
-    (item) => String(item.slug || "").toLowerCase() === normalizedTenantSlug && item.isActive !== false
-  );
-  if (!tenant) {
+  const auth = authenticateTenantUser(store, { tenantSlug, email, password });
+  if (!auth) {
     return res.status(401).json({ error: "Invalid tenant credentials." });
   }
-
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const user = store.users.find(
-    (item) =>
-      item.tenantId === tenant.id &&
-      String(item.email || "").toLowerCase() === normalizedEmail &&
-      item.isActive !== false
-  );
-
-  if (!user || !verifyPassword(password, user.passwordHash)) {
-    return res.status(401).json({ error: "Invalid tenant credentials." });
-  }
-
-  const token = createSessionToken();
-  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_MS).toISOString();
-  store.sessions = store.sessions.filter((session) => session.userId !== user.id);
-  store.sessions.push({
-    id: randomUUID(),
-    token,
-    userId: user.id,
-    tenantId: tenant.id,
-    createdAt: nowIso(),
-    expiresAt,
-  });
-  user.lastLoginAt = nowIso();
-  user.updatedAt = nowIso();
-  writeStore(store);
+  const { tenant, user } = auth;
+  const token = createSessionForUser(store, user, tenant);
   setSessionCookie(res, token);
 
   return res.json({
