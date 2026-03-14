@@ -1,5 +1,12 @@
 /* Legacy-safe UI fallback for older mobile browsers. */
 (function () {
+  var bootState = window.__carRentalBoot || { bootDetected: false, pageStatus: {} };
+  window.__carRentalBoot = bootState;
+
+  function isArray(value) {
+    return Object.prototype.toString.call(value) === "[object Array]";
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -57,6 +64,71 @@
       return "home";
     }
     return fileName.replace(".html", "");
+  }
+
+  function isMainPageReady(pageKey) {
+    return bootState.pageStatus && bootState.pageStatus[pageKey] === "ready";
+  }
+
+  function markFallbackRendered(pageKey) {
+    if (!bootState.pageStatus) {
+      bootState.pageStatus = {};
+    }
+    bootState.pageStatus[pageKey] = "fallback";
+  }
+
+  function renderCustomers(customers) {
+    var listContainer = document.getElementById("customer-list");
+    var metricsContainer = document.getElementById("customer-metrics");
+    if (!listContainer || !metricsContainer) {
+      return;
+    }
+
+    if (!customers || !customers.length) {
+      listContainer.innerHTML = "<p>No customers yet.</p>";
+      metricsContainer.innerHTML =
+        '<div class="metric"><div class="label">Total Customers</div><div class="value">0</div></div>';
+      return;
+    }
+
+    var rows = [];
+    var i;
+    for (i = 0; i < customers.length; i += 1) {
+      var customer = customers[i] || {};
+      var createdAt = customer.createdAt ? String(customer.createdAt).slice(0, 10) : "n/a";
+      rows.push(
+        "<tr>" +
+          "<td>" +
+          escapeHtml((customer.firstName || "") + " " + (customer.lastName || "")) +
+          "</td>" +
+          "<td>" +
+          escapeHtml(customer.email || "") +
+          "</td>" +
+          "<td>" +
+          escapeHtml(customer.phone || "") +
+          "</td>" +
+          "<td>" +
+          escapeHtml(customer.licenseNumber || "") +
+          "</td>" +
+          "<td>" +
+          escapeHtml(createdAt) +
+          "</td>" +
+          "</tr>"
+      );
+    }
+
+    listContainer.innerHTML =
+      "<table>" +
+      "<thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>License</th><th>Created</th></tr></thead>" +
+      "<tbody>" +
+      rows.join("") +
+      "</tbody>" +
+      "</table>";
+
+    metricsContainer.innerHTML =
+      '<div class="metric"><div class="label">Total Customers</div><div class="value">' +
+      customers.length +
+      "</div></div>";
   }
 
   function renderFleet(vehicles) {
@@ -198,7 +270,12 @@
             escapeHtml(customers[i].id || "") +
             "\">" +
             escapeHtml(
-              (customers[i].firstName || "") + " " + (customers[i].lastName || "") + " (" + (customers[i].email || "") + ")"
+              (customers[i].firstName || "") +
+                " " +
+                (customers[i].lastName || "") +
+                " (" +
+                (customers[i].email || "") +
+                ")"
             ) +
             "</option>"
         );
@@ -212,7 +289,9 @@
           "<option value=\"" +
             escapeHtml(vehicles[i].id || "") +
             "\">" +
-            escapeHtml((vehicles[i].plateNumber || "") + " - " + (vehicles[i].make || "") + " " + (vehicles[i].model || "")) +
+            escapeHtml(
+              (vehicles[i].plateNumber || "") + " - " + (vehicles[i].make || "") + " " + (vehicles[i].model || "")
+            ) +
             "</option>"
         );
       }
@@ -345,12 +424,21 @@
     container.innerHTML = blocks.join("");
   }
 
+  function runCustomersFallback() {
+    requestJson("/api/customers", function (error, customers) {
+      if (error) {
+        return;
+      }
+      renderCustomers(isArray(customers) ? customers : []);
+    });
+  }
+
   function runFleetFallback() {
     requestJson("/api/vehicles", function (error, vehicles) {
       if (error) {
         return;
       }
-      renderFleet(vehicles && vehicles.join ? vehicles : []);
+      renderFleet(isArray(vehicles) ? vehicles : []);
     });
   }
 
@@ -368,9 +456,9 @@
             return;
           }
           renderReservations(
-            reservations && reservations.join ? reservations : [],
-            vehicles && vehicles.join ? vehicles : [],
-            customers && customers.join ? customers : []
+            isArray(reservations) ? reservations : [],
+            isArray(vehicles) ? vehicles : [],
+            isArray(customers) ? customers : []
           );
         });
       });
@@ -383,7 +471,7 @@
         return;
       }
 
-      var safeVehicles = vehicles && vehicles.join ? vehicles : [];
+      var safeVehicles = isArray(vehicles) ? vehicles : [];
       var selectIds = ["document-vehicle-select", "document-list-vehicle-select", "work-order-vehicle"];
       var i;
       for (i = 0; i < selectIds.length; i += 1) {
@@ -413,13 +501,16 @@
 
       requestJson("/api/work-orders", function (errorWorkOrders, workOrders) {
         if (!errorWorkOrders) {
-          renderWorkOrders(workOrders && workOrders.join ? workOrders : [], safeVehicles);
+          renderWorkOrders(isArray(workOrders) ? workOrders : [], safeVehicles);
         }
       });
 
       var docSelect = document.getElementById("document-list-vehicle-select");
-      if (!docSelect || !docSelect.value) {
+      if (!docSelect) {
         return;
+      }
+      if (!docSelect.value && safeVehicles.length > 0) {
+        docSelect.value = safeVehicles[0].id;
       }
 
       function loadDocumentsForSelectedVehicle() {
@@ -431,7 +522,7 @@
           if (error) {
             return;
           }
-          renderDocuments(docs && docs.join ? docs : []);
+          renderDocuments(isArray(docs) ? docs : []);
         });
       }
 
@@ -449,8 +540,15 @@
     });
   }
 
-  function run() {
-    var page = getPageKey();
+  function runPageFallback(page) {
+    if (page === "home") {
+      runHomeFallback();
+      return;
+    }
+    if (page === "customers") {
+      runCustomersFallback();
+      return;
+    }
     if (page === "fleet") {
       runFleetFallback();
       return;
@@ -461,16 +559,35 @@
     }
     if (page === "maintenance") {
       runMaintenanceFallback();
-      return;
-    }
-    if (page === "home") {
-      runHomeFallback();
     }
   }
 
+  function bootFallback() {
+    var page = getPageKey();
+    var supportedPages = {
+      home: true,
+      customers: true,
+      fleet: true,
+      reservations: true,
+      maintenance: true,
+    };
+    if (!supportedPages[page]) {
+      return;
+    }
+
+    var delay = bootState.bootDetected ? 2200 : 80;
+    setTimeout(function () {
+      if (isMainPageReady(page)) {
+        return;
+      }
+      markFallbackRendered(page);
+      runPageFallback(page);
+    }, delay);
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
+    document.addEventListener("DOMContentLoaded", bootFallback);
   } else {
-    run();
+    bootFallback();
   }
 })();

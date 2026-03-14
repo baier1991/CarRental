@@ -1,10 +1,22 @@
-const { request, showToast, collectCheckedValues, formatMoney, vehicleLabel, sessionReady } =
+const {
+  request,
+  showToast,
+  collectCheckedValues,
+  formatMoney,
+  vehicleLabel,
+  sessionReady,
+  markPageReady,
+  paginateItems,
+  renderPaginationControls,
+} =
   window.AppCommon;
 
 const state = {
   vehicles: [],
   customers: [],
   reservations: [],
+  reservationPage: 1,
+  reservationPageSize: 8,
 };
 
 function populateSelects() {
@@ -27,8 +39,12 @@ function renderReservations() {
   const container = document.getElementById("reservation-list");
   if (state.reservations.length === 0) {
     container.innerHTML = "<p>No reservations yet.</p>";
+    renderPaginationControls("reservation-pagination", null);
     return;
   }
+
+  const paginated = paginateItems(state.reservations, state.reservationPage, state.reservationPageSize);
+  state.reservationPage = paginated.currentPage;
 
   const customerMap = new Map(state.customers.map((customer) => [customer.id, `${customer.firstName} ${customer.lastName}`]));
   const vehicleMap = new Map(state.vehicles.map((vehicle) => [vehicle.id, `${vehicle.plateNumber} (${vehicle.make} ${vehicle.model})`]));
@@ -46,7 +62,7 @@ function renderReservations() {
         </tr>
       </thead>
       <tbody>
-        ${state.reservations
+        ${paginated.items
           .map(
             (reservation) => {
               const totalPrice =
@@ -73,6 +89,11 @@ function renderReservations() {
       </tbody>
     </table>
   `;
+
+  renderPaginationControls("reservation-pagination", paginated, (nextPage) => {
+    state.reservationPage = nextPage;
+    renderReservations();
+  });
 }
 
 async function loadReservationData() {
@@ -84,6 +105,7 @@ async function loadReservationData() {
   state.vehicles = vehicles;
   state.customers = customers;
   state.reservations = reservations;
+  state.reservationPage = 1;
   populateSelects();
   renderReservations();
 }
@@ -105,6 +127,7 @@ function attachHandlers() {
       });
       showToast(`Reservation created (${formatMoney(reservation.pricing.total)}).`);
       reservationForm.reset();
+      state.reservationPage = 1;
       await loadReservationData();
     } catch (error) {
       showToast(error.message, true);
@@ -142,6 +165,7 @@ async function bootstrap() {
     await sessionReady;
     attachHandlers();
     await loadReservationData();
+    markPageReady("reservations");
   } catch (error) {
     showToast(error.message, true);
   }

@@ -1,16 +1,32 @@
-const { request, showToast, collectCheckedValues, formatMoney, vehicleLabel, sessionReady } =
+const {
+  request,
+  showToast,
+  collectCheckedValues,
+  formatMoney,
+  vehicleLabel,
+  sessionReady,
+  markPageReady,
+  paginateItems,
+  renderPaginationControls,
+} =
   window.AppCommon;
 
 const state = {
   vehicles: [],
+  vehiclePage: 1,
+  vehiclePageSize: 8,
 };
 
 function renderVehicleList() {
   const container = document.getElementById("vehicle-list");
   if (state.vehicles.length === 0) {
     container.innerHTML = "<p>No vehicles yet.</p>";
+    renderPaginationControls("vehicle-pagination", null);
     return;
   }
+
+  const paginated = paginateItems(state.vehicles, state.vehiclePage, state.vehiclePageSize);
+  state.vehiclePage = paginated.currentPage;
 
   container.innerHTML = `
     <table>
@@ -26,7 +42,7 @@ function renderVehicleList() {
         </tr>
       </thead>
       <tbody>
-        ${state.vehicles
+        ${paginated.items
           .map(
             (vehicle) => `
             <tr>
@@ -51,6 +67,11 @@ function renderVehicleList() {
       </tbody>
     </table>
   `;
+
+  renderPaginationControls("vehicle-pagination", paginated, (nextPage) => {
+    state.vehiclePage = nextPage;
+    renderVehicleList();
+  });
 }
 
 function populateEditSelect() {
@@ -108,6 +129,7 @@ function populateEditForm(vehicleId) {
 
 async function loadFleetData() {
   state.vehicles = await request("/api/vehicles");
+  state.vehiclePage = 1;
   renderVehicleList();
   populateEditSelect();
   populateEditForm(document.getElementById("edit-vehicle-select").value);
@@ -134,6 +156,7 @@ function attachHandlers() {
       });
       showToast("Vehicle added.");
       addForm.reset();
+      state.vehiclePage = 1;
       await loadFleetData();
     } catch (error) {
       showToast(error.message, true);
@@ -202,6 +225,7 @@ function attachHandlers() {
         }
       `;
       showToast("CSV import finished.");
+      state.vehiclePage = 1;
       await loadFleetData();
     } catch (error) {
       showToast(error.message, true);
@@ -215,6 +239,7 @@ async function bootstrap() {
     await sessionReady;
     attachHandlers();
     await loadFleetData();
+    markPageReady("fleet");
   } catch (error) {
     showToast(error.message, true);
   }

@@ -4,16 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Rental OS - Maintenance</title>
-    <link rel="stylesheet" href="/styles.css?v=20260318" />
+    <link rel="stylesheet" href="/styles.css?v=20260319" />
   </head>
   <body data-page="maintenance">
     <div class="app-shell">
       <aside class="sidebar">
         <a class="sidebar-brand" href="/">Car Rental OS</a>
         <p class="sidebar-subtitle">Rental operations platform</p>
+        <button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-expanded="false" aria-controls="sidebar-menu">
+          Menu
+        </button>
         <div id="session-summary" class="sidebar-session"></div>
         <button type="button" id="logout-btn" class="logout-btn">Logout</button>
-        <nav class="sidebar-menu">
+        <nav id="sidebar-menu" class="sidebar-menu">
           <a href="/" data-page="home">Home</a>
           <a href="/fleet.html" data-page="fleet">Fleet</a>
           <a href="/customers.html" data-page="customers">Customers</a>
@@ -102,11 +105,13 @@
                 <select id="document-list-vehicle-select"></select>
               </label>
               <div id="vehicle-document-list" class="table-wrap"></div>
+              <div id="document-pagination" class="pagination-wrap hidden"></div>
             </article>
 
             <article class="card">
               <h2>Work Orders</h2>
               <div id="work-order-list" class="table-wrap"></div>
+              <div id="work-order-pagination" class="pagination-wrap hidden"></div>
             </article>
           </section>
 
@@ -115,8 +120,8 @@
       </div>
     </div>
 
-    <script src="/legacy-fallback.js?v=20260318"></script>
-    <script src="/common.js?v=20260318"></script>
-    <script src="/maintenance.js?v=20260318"></script>
+    <script src="/legacy-fallback.js?v=20260319"></script>
+    <script src="/common.js?v=20260319"></script>
+    <script src="/maintenance.js?v=20260319"></script>
   </body>
 </html>

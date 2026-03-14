@@ -1,8 +1,11 @@
-const { request, showToast, sessionReady } = window.AppCommon;
+const { request, showToast, sessionReady, markPageReady, paginateItems, renderPaginationControls } =
+  window.AppCommon;
 
 const state = {
   customers: [],
   reservations: [],
+  customerPage: 1,
+  customerPageSize: 8,
 };
 const searchParams = new URLSearchParams(window.location.search);
 
@@ -21,8 +24,12 @@ function renderCustomerList() {
   const container = document.getElementById("customer-list");
   if (state.customers.length === 0) {
     container.innerHTML = "<p>No customers yet.</p>";
+    renderPaginationControls("customer-pagination", null);
     return;
   }
+
+  const paginated = paginateItems(state.customers, state.customerPage, state.customerPageSize);
+  state.customerPage = paginated.currentPage;
 
   container.innerHTML = `
     <table>
@@ -36,7 +43,7 @@ function renderCustomerList() {
         </tr>
       </thead>
       <tbody>
-        ${state.customers
+        ${paginated.items
           .map(
             (customer) => {
               const createdAt = customer && customer.createdAt ? String(customer.createdAt).slice(0, 10) : "n/a";
@@ -55,6 +62,11 @@ function renderCustomerList() {
       </tbody>
     </table>
   `;
+
+  renderPaginationControls("customer-pagination", paginated, (nextPage) => {
+    state.customerPage = nextPage;
+    renderCustomerList();
+  });
 }
 
 function renderMetrics() {
@@ -87,6 +99,7 @@ async function loadCustomers() {
   }
   state.customers = customers;
   state.reservations = reservations;
+  state.customerPage = 1;
   renderCustomerList();
   renderMetrics();
 }
@@ -104,6 +117,7 @@ function attachHandlers() {
       showToast("Customer added.");
       setFormMessage("Customer saved successfully.");
       form.reset();
+      state.customerPage = 1;
       await loadCustomers();
     } catch (error) {
       showToast(error.message, true);
@@ -127,6 +141,7 @@ async function bootstrap() {
       setFormMessage(searchParams.get("error"), true);
       showToast(searchParams.get("error"), true);
     }
+    markPageReady("customers");
   } catch (error) {
     showToast(error.message, true);
   }

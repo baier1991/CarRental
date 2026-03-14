@@ -1,10 +1,15 @@
-const { request, showToast, vehicleLabel, formatMoney, sessionReady } = window.AppCommon;
+const { request, showToast, vehicleLabel, formatMoney, sessionReady, markPageReady, paginateItems, renderPaginationControls } =
+  window.AppCommon;
 
 const state = {
   vehicles: [],
   workOrders: [],
   documents: [],
   selectedVehicleId: null,
+  workOrderPage: 1,
+  workOrderPageSize: 8,
+  documentPage: 1,
+  documentPageSize: 8,
 };
 
 function populateVehicleSelects() {
@@ -36,8 +41,12 @@ function renderDocuments() {
   const container = document.getElementById("vehicle-document-list");
   if (state.documents.length === 0) {
     container.innerHTML = "<p>No documents uploaded for this vehicle.</p>";
+    renderPaginationControls("document-pagination", null);
     return;
   }
+
+  const paginated = paginateItems(state.documents, state.documentPage, state.documentPageSize);
+  state.documentPage = paginated.currentPage;
 
   container.innerHTML = `
     <table>
@@ -51,7 +60,7 @@ function renderDocuments() {
         </tr>
       </thead>
       <tbody>
-        ${state.documents
+        ${paginated.items
           .map(
             (document) => {
               const uploadedAt = document && document.uploadedAt ? String(document.uploadedAt).slice(0, 10) : "n/a";
@@ -70,14 +79,23 @@ function renderDocuments() {
       </tbody>
     </table>
   `;
+
+  renderPaginationControls("document-pagination", paginated, (nextPage) => {
+    state.documentPage = nextPage;
+    renderDocuments();
+  });
 }
 
 function renderWorkOrders() {
   const container = document.getElementById("work-order-list");
   if (state.workOrders.length === 0) {
     container.innerHTML = "<p>No work orders yet.</p>";
+    renderPaginationControls("work-order-pagination", null);
     return;
   }
+
+  const paginated = paginateItems(state.workOrders, state.workOrderPage, state.workOrderPageSize);
+  state.workOrderPage = paginated.currentPage;
 
   const statusOptions = ["open", "in_progress", "on_hold", "completed", "cancelled"];
   const vehicleMap = new Map(state.vehicles.map((vehicle) => [vehicle.id, `${vehicle.plateNumber}`]));
@@ -95,7 +113,7 @@ function renderWorkOrders() {
         </tr>
       </thead>
       <tbody>
-        ${state.workOrders
+        ${paginated.items
           .map(
             (workOrder) => `
             <tr>
@@ -120,16 +138,23 @@ function renderWorkOrders() {
       </tbody>
     </table>
   `;
+
+  renderPaginationControls("work-order-pagination", paginated, (nextPage) => {
+    state.workOrderPage = nextPage;
+    renderWorkOrders();
+  });
 }
 
 async function loadDocuments(vehicleId) {
   state.selectedVehicleId = vehicleId;
   if (!vehicleId) {
     state.documents = [];
+    state.documentPage = 1;
     renderDocuments();
     return;
   }
   state.documents = await request(`/api/vehicles/${vehicleId}/documents`);
+  state.documentPage = 1;
   renderDocuments();
 }
 
@@ -137,6 +162,7 @@ async function loadMaintenanceData() {
   const [vehicles, workOrders] = await Promise.all([request("/api/vehicles"), request("/api/work-orders")]);
   state.vehicles = vehicles;
   state.workOrders = workOrders;
+  state.workOrderPage = 1;
   populateVehicleSelects();
   renderWorkOrders();
   const fallbackVehicleId = state.vehicles.length > 0 ? state.vehicles[0].id : null;
@@ -208,6 +234,7 @@ function attachHandlers() {
       });
       showToast("Work order created.");
       workOrderForm.reset();
+      state.workOrderPage = 1;
       await loadMaintenanceData();
     } catch (error) {
       showToast(error.message, true);
@@ -237,6 +264,7 @@ function attachHandlers() {
         body: JSON.stringify({ status: select.value }),
       });
       showToast("Work order updated.");
+      state.workOrderPage = 1;
       await loadMaintenanceData();
     } catch (error) {
       showToast(error.message, true);
@@ -249,6 +277,7 @@ async function bootstrap() {
     await sessionReady;
     attachHandlers();
     await loadMaintenanceData();
+    markPageReady("maintenance");
   } catch (error) {
     showToast(error.message, true);
   }

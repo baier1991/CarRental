@@ -46,6 +46,14 @@ body {
   font-size: 0.86rem;
 }
 
+.sidebar-toggle {
+  display: none;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  background: #1e293b;
+  border-color: #334155;
+}
+
 .sidebar-session {
   margin: 0 0 0.7rem;
   font-size: 0.85rem;
@@ -327,6 +335,40 @@ small {
   font-size: 0.85rem;
 }
 
+.pagination-wrap {
+  margin-top: 0.7rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination-pages {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.pagination-btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.84rem;
+  border-radius: 8px;
+}
+
+.pagination-btn.active {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #ffffff;
+}
+
+.pagination-summary {
+  margin-left: auto;
+  font-size: 0.84rem;
+  color: #334155;
+}
+
 .toast {
   position: fixed;
   right: 1rem;
@@ -359,11 +401,84 @@ small {
   }
 
   .sidebar-menu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: none;
+    grid-template-columns: 1fr;
+  }
+
+  body.sidebar-open .sidebar-menu {
+    display: grid;
+  }
+
+  .sidebar-toggle {
+    display: block;
+  }
+
+  .sidebar-session,
+  .logout-btn {
+    display: none;
+  }
+
+  body.sidebar-open .sidebar-session,
+  body.sidebar-open .logout-btn {
+    display: block;
   }
 
   .grid-2,
   .grid-3 {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .table-wrap table.mobile-card-table,
+  .table-wrap table.mobile-card-table thead,
+  .table-wrap table.mobile-card-table tbody,
+  .table-wrap table.mobile-card-table tr,
+  .table-wrap table.mobile-card-table th,
+  .table-wrap table.mobile-card-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-wrap table.mobile-card-table thead {
+    display: none;
+  }
+
+  .table-wrap table.mobile-card-table tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.3rem 0.45rem;
+    background: #ffffff;
+  }
+
+  .table-wrap table.mobile-card-table td {
+    white-space: normal;
+    padding: 0.45rem 0.35rem;
+    border-bottom: 1px dashed #e2e8f0;
+  }
+
+  .table-wrap table.mobile-card-table td:last-child {
+    border-bottom: none;
+  }
+
+  .table-wrap table.mobile-card-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.2rem;
+  }
+
+  .pagination-summary {
+    width: 100%;
+    margin-left: 0;
   }
 }

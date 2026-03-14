@@ -4,16 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Rental OS - Users</title>
-    <link rel="stylesheet" href="/styles.css?v=20260316" />
+    <link rel="stylesheet" href="/styles.css?v=20260319" />
   </head>
   <body data-page="users">
     <div class="app-shell">
       <aside class="sidebar">
         <a class="sidebar-brand" href="/">Car Rental OS</a>
         <p class="sidebar-subtitle">Rental operations platform</p>
+        <button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-expanded="false" aria-controls="sidebar-menu">
+          Menu
+        </button>
         <div id="session-summary" class="sidebar-session"></div>
         <button type="button" id="logout-btn" class="logout-btn">Logout</button>
-        <nav class="sidebar-menu">
+        <nav id="sidebar-menu" class="sidebar-menu">
           <a href="/" data-page="home">Home</a>
           <a href="/fleet.html" data-page="fleet">Fleet</a>
           <a href="/customers.html" data-page="customers">Customers</a>
@@ -72,6 +75,7 @@
           <section class="card">
             <h2>Users</h2>
             <div id="user-list" class="table-wrap"></div>
+            <div id="user-pagination" class="pagination-wrap hidden"></div>
           </section>
 
           <div id="toast" class="toast hidden" aria-live="polite"></div>
@@ -79,7 +83,7 @@
       </div>
     </div>
 
-    <script src="/common.js?v=20260316"></script>
-    <script src="/users.js?v=20260316"></script>
+    <script src="/common.js?v=20260319"></script>
+    <script src="/users.js?v=20260319"></script>
   </body>
 </html>

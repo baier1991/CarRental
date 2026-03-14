@@ -1,4 +1,4 @@
-const { request, formatMoney, showToast, sessionReady } = window.AppCommon;
+const { request, formatMoney, showToast, sessionReady, markPageReady } = window.AppCommon;
 
 function renderMetrics(dashboard) {
   const metrics = [
@@ -139,6 +139,7 @@ async function bootstrap() {
     renderMetrics(dashboard);
     renderUpcomingPickups(dashboard, vehicles, customers);
     renderOpenWorkOrders(workOrders, vehicles);
+    markPageReady("home");
   } catch (error) {
     showToast(error.message, true);
   }

@@ -1,7 +1,9 @@
-const { request, showToast, sessionReady } = window.AppCommon;
+const { request, showToast, sessionReady, markPageReady, paginateItems, renderPaginationControls } = window.AppCommon;
 
 const state = {
   users: [],
+  userPage: 1,
+  userPageSize: 8,
 };
 
 function fullName(user) {
@@ -23,8 +25,12 @@ function renderUsers() {
   const container = document.getElementById("user-list");
   if (state.users.length === 0) {
     container.innerHTML = "<p>No users yet.</p>";
+    renderPaginationControls("user-pagination", null);
     return;
   }
+
+  const paginated = paginateItems(state.users, state.userPage, state.userPageSize);
+  state.userPage = paginated.currentPage;
 
   container.innerHTML = `
     <table>
@@ -39,7 +45,7 @@ function renderUsers() {
         </tr>
       </thead>
       <tbody>
-        ${state.users
+        ${paginated.items
           .map(
             (user) => `
             <tr>
@@ -67,10 +73,16 @@ function renderUsers() {
       </tbody>
     </table>
   `;
+
+  renderPaginationControls("user-pagination", paginated, (nextPage) => {
+    state.userPage = nextPage;
+    renderUsers();
+  });
 }
 
 async function loadUsers() {
   state.users = await request("/api/users");
+  state.userPage = 1;
   renderUsers();
   populateUserSelect();
 }
@@ -93,6 +105,7 @@ function attachHandlers() {
       });
       showToast("User created.");
       userForm.reset();
+      state.userPage = 1;
       await loadUsers();
     } catch (error) {
       showToast(error.message, true);
@@ -144,6 +157,7 @@ function attachHandlers() {
         }),
       });
       showToast("User updated.");
+      state.userPage = 1;
       await loadUsers();
     } catch (error) {
       showToast(error.message, true);
@@ -156,6 +170,7 @@ async function bootstrap() {
     await sessionReady;
     attachHandlers();
     await loadUsers();
+    markPageReady("users");
   } catch (error) {
     showToast(error.message, true);
   }
