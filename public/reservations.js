@@ -19,6 +19,14 @@ const state = {
   reservationPageSize: 8,
 };
 
+const INLINE_CUSTOMER_FIELD_NAMES = [
+  "inlineCustomerFirstName",
+  "inlineCustomerLastName",
+  "inlineCustomerEmail",
+  "inlineCustomerPhone",
+  "inlineCustomerLicenseNumber",
+];
+
 function populateSelects() {
   const customerSelect = document.getElementById("reservation-customer");
   const reservationVehicleSelect = document.getElementById("reservation-vehicle");
@@ -33,6 +41,29 @@ function populateSelects() {
     .join("");
   reservationVehicleSelect.innerHTML = vehicleOptions;
   quoteVehicleSelect.innerHTML = vehicleOptions;
+}
+
+function setInlineCustomerMode(isEnabled) {
+  const customerSelect = document.getElementById("reservation-customer");
+  const inlineContainer = document.getElementById("reservation-inline-customer-fields");
+  if (!customerSelect || !inlineContainer) {
+    return;
+  }
+
+  inlineContainer.classList.toggle("hidden", !isEnabled);
+  customerSelect.disabled = isEnabled;
+  customerSelect.required = !isEnabled;
+
+  INLINE_CUSTOMER_FIELD_NAMES.forEach((fieldName) => {
+    const field = inlineContainer.querySelector(`[name="${fieldName}"]`);
+    if (!(field instanceof HTMLInputElement)) {
+      return;
+    }
+    field.required = isEnabled;
+    if (!isEnabled) {
+      field.value = "";
+    }
+  });
 }
 
 function renderReservations() {
@@ -114,23 +145,64 @@ function attachHandlers() {
   const reservationForm = document.getElementById("reservation-form");
   const quoteForm = document.getElementById("quote-form");
   const quoteResult = document.getElementById("quote-result");
+  const inlineToggle = document.getElementById("reservation-create-customer-inline");
+
+  setInlineCustomerMode(false);
+  if (inlineToggle instanceof HTMLInputElement) {
+    inlineToggle.addEventListener("change", () => {
+      setInlineCustomerMode(inlineToggle.checked);
+    });
+  }
 
   reservationForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(reservationForm).entries());
+    const formData = new FormData(reservationForm);
+    const payload = Object.fromEntries(formData.entries());
     payload.addOns = collectCheckedValues(reservationForm, "addOns");
 
+    const shouldCreateInlineCustomer = formData.get("createCustomerInline") === "on";
+    const inlineCustomerPayload = {
+      firstName: String(payload.inlineCustomerFirstName || "").trim(),
+      lastName: String(payload.inlineCustomerLastName || "").trim(),
+      email: String(payload.inlineCustomerEmail || "").trim(),
+      phone: String(payload.inlineCustomerPhone || "").trim(),
+      licenseNumber: String(payload.inlineCustomerLicenseNumber || "").trim(),
+    };
+    delete payload.createCustomerInline;
+    INLINE_CUSTOMER_FIELD_NAMES.forEach((fieldName) => delete payload[fieldName]);
+
+    let inlineCustomerCreated = null;
     try {
+      if (shouldCreateInlineCustomer) {
+        const inlineFieldsMissing = Object.values(inlineCustomerPayload).some((value) => !value);
+        if (inlineFieldsMissing) {
+          throw new Error("Please complete all new customer fields.");
+        }
+        inlineCustomerCreated = await request("/api/customers", {
+          method: "POST",
+          body: JSON.stringify(inlineCustomerPayload),
+        });
+        payload.customerId = inlineCustomerCreated.id;
+      }
+
       const reservation = await request("/api/reservations", {
         method: "POST",
         body: JSON.stringify(payload),
       });
       showToast(`Reservation created (${formatMoney(reservation.pricing.total)}).`);
       reservationForm.reset();
+      setInlineCustomerMode(false);
       state.reservationPage = 1;
       await loadReservationData();
     } catch (error) {
-      showToast(error.message, true);
+      if (inlineCustomerCreated) {
+        showToast(
+          `${error.message} New customer was created and is now available in the customer list.`,
+          true
+        );
+      } else {
+        showToast(error.message, true);
+      }
     }
   });
 

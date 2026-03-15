@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Rental OS - Reservations</title>
-    <link rel="stylesheet" href="/styles.css?v=20260319" />
+    <link rel="stylesheet" href="/styles.css?v=20260320" />
   </head>
   <body data-page="reservations">
     <div class="app-shell">
@@ -38,6 +38,21 @@
               <h2>Create Reservation</h2>
               <form id="reservation-form" class="stack">
             <label>Customer <select name="customerId" id="reservation-customer" required></select></label>
+            <label style="display: inline-flex; align-items: center; gap: 0.45rem">
+              <input type="checkbox" id="reservation-create-customer-inline" name="createCustomerInline" />
+              Create a new customer now
+            </label>
+            <div id="reservation-inline-customer-fields" class="soft-box hidden">
+              <div class="grid-2">
+                <label>First Name <input name="inlineCustomerFirstName" /></label>
+                <label>Last Name <input name="inlineCustomerLastName" /></label>
+              </div>
+              <div class="grid-2">
+                <label>Email <input type="email" name="inlineCustomerEmail" /></label>
+                <label>Phone <input name="inlineCustomerPhone" /></label>
+              </div>
+              <label>License Number <input name="inlineCustomerLicenseNumber" /></label>
+            </div>
             <label>Vehicle <select name="vehicleId" id="reservation-vehicle" required></select></label>
             <div class="grid-2">
               <label>Start Date <input type="date" name="startDate" required /></label>
@@ -115,8 +130,8 @@
       </div>
     </div>
 
-    <script src="/legacy-fallback.js?v=20260319"></script>
-    <script src="/common.js?v=20260319"></script>
-    <script src="/reservations.js?v=20260319"></script>
+    <script src="/legacy-fallback.js?v=20260320"></script>
+    <script src="/common.js?v=20260320"></script>
+    <script src="/reservations.js?v=20260320"></script>
   </body>
 </html>
