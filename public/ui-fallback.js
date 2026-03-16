@@ -123,6 +123,79 @@
       "</div></div>";
   }
 
+  function bindFleetFallbackInteractions() {
+    var addButton = document.getElementById("fleet-add-toggle-btn");
+    var addPanel = document.getElementById("fleet-add-panel");
+    var addForm = document.getElementById("vehicle-form");
+
+    if (addButton && addPanel && addButton.dataset.handlerBound !== "true" && addButton.dataset.fallbackBound !== "true") {
+      addButton.dataset.fallbackBound = "true";
+      if (addButton.hasAttribute("disabled")) {
+        addButton.removeAttribute("disabled");
+      }
+
+      var syncAddButtonLabel = function () {
+        var isOpen = !addPanel.classList.contains("hidden");
+        addButton.textContent = isOpen ? "Close Add Vehicle" : "+ Add Vehicle";
+      };
+
+      syncAddButtonLabel();
+      addButton.addEventListener("click", function () {
+        addPanel.classList.toggle("hidden");
+        syncAddButtonLabel();
+      });
+    }
+
+    if (addForm && addForm.dataset.handlerBound !== "true" && addForm.dataset.fallbackSubmitBound !== "true") {
+      addForm.dataset.fallbackSubmitBound = "true";
+      addForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var formData = new FormData(addForm);
+        var payload = {};
+        formData.forEach(function (value, key) {
+          if (key === "features") {
+            return;
+          }
+          payload[key] = value;
+        });
+        payload.features = formData.getAll("features");
+
+        if (typeof window.confirm === "function" && !window.confirm("Create vehicle " + (payload.plateNumber || "") + "?")) {
+          return;
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/vehicles", true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState !== 4) {
+            return;
+          }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            window.location.reload();
+            return;
+          }
+          var errorMessage = "Vehicle create failed.";
+          try {
+            var errorData = JSON.parse(xhr.responseText || "{}");
+            if (errorData && errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (_error) {
+            // Ignore parse errors
+          }
+          if (window.AppCommon && typeof window.AppCommon.showToast === "function") {
+            window.AppCommon.showToast(errorMessage, true);
+          } else {
+            window.alert(errorMessage);
+          }
+        };
+        xhr.send(JSON.stringify(payload));
+      });
+    }
+  }
+
   function renderCustomersFallback(customers, reservations) {
     var listContainer = document.getElementById("customer-list");
     if (!listContainer || !isElementEffectivelyEmpty(listContainer)) {
@@ -333,6 +406,7 @@
         return;
       }
       renderFleetFallback(vehicles);
+      bindFleetFallbackInteractions();
     });
   }
 

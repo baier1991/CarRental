@@ -256,6 +256,7 @@ function attachHandlers() {
   const resetFiltersButton = document.getElementById("fleet-filter-reset-btn");
 
   if (addToggleButton) {
+    addToggleButton.dataset.handlerBound = "true";
     addToggleButton.addEventListener("click", () => {
       if (!canEditVehicles()) {
         showToast("You do not have permission to add vehicles.", true);
@@ -266,6 +267,7 @@ function attachHandlers() {
   }
 
   if (addForm) {
+    addForm.dataset.handlerBound = "true";
     addForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!canEditVehicles()) {
