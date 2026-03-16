@@ -186,6 +186,147 @@
       "</div></div>";
   }
 
+  function renderHomeFallback(dashboard, vehicles, customers, workOrders) {
+    var metricsContainer = document.getElementById("dashboard-metrics");
+    if (metricsContainer && isElementEffectivelyEmpty(metricsContainer)) {
+      var safeDashboard = dashboard && typeof dashboard === "object" ? dashboard : {};
+      var metrics = [
+        ["Fleet Size", safeDashboard.fleetSize || 0],
+        ["Available Vehicles", safeDashboard.availableVehicles || 0],
+        ["Active Reservations", safeDashboard.activeReservations || 0],
+        ["Active Customers", safeDashboard.activeCustomers || 0],
+        ["Utilization", String(safeDashboard.utilizationRate || 0) + "%"],
+        ["Expected Revenue", formatMoney(safeDashboard.expectedRevenue || 0)],
+        ["Open Work Orders", safeDashboard.openWorkOrders || 0],
+      ];
+      var metricHtml = [];
+      for (var i = 0; i < metrics.length; i += 1) {
+        metricHtml.push(
+          '<div class="metric"><div class="label">' +
+            escapeHtml(metrics[i][0]) +
+            '</div><div class="value">' +
+            escapeHtml(metrics[i][1]) +
+            "</div></div>"
+        );
+      }
+      metricsContainer.innerHTML = metricHtml.join("");
+    }
+
+    var upcomingContainer = document.getElementById("upcoming-pickups");
+    if (upcomingContainer && isElementEffectivelyEmpty(upcomingContainer)) {
+      var safeDashboardData = dashboard && typeof dashboard === "object" ? dashboard : {};
+      var pickups = Array.isArray(safeDashboardData.upcomingPickups) ? safeDashboardData.upcomingPickups : [];
+      if (pickups.length === 0) {
+        upcomingContainer.innerHTML = "<p>No upcoming pickups.</p>";
+      } else {
+        var vehicleMap = {};
+        var customerMap = {};
+        var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+        var safeCustomers = Array.isArray(customers) ? customers : [];
+        for (var j = 0; j < safeVehicles.length; j += 1) {
+          vehicleMap[safeVehicles[j].id] =
+            (safeVehicles[j].plateNumber || "") +
+            " " +
+            (safeVehicles[j].make || "") +
+            " " +
+            (safeVehicles[j].model || "");
+        }
+        for (var k = 0; k < safeCustomers.length; k += 1) {
+          customerMap[safeCustomers[k].id] = (safeCustomers[k].firstName || "") + " " + (safeCustomers[k].lastName || "");
+        }
+
+        var pickupRows = [];
+        for (var p = 0; p < pickups.length; p += 1) {
+          var pickup = pickups[p] || {};
+          pickupRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(customerMap[pickup.customerId] || pickup.customerId || "") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(vehicleMap[pickup.vehicleId] || pickup.vehicleId || "") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(pickup.startDate || "") +
+              "</td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(pickup.status || "n/a") +
+              "</span></td>" +
+              "</tr>"
+          );
+        }
+
+        upcomingContainer.innerHTML =
+          "<table><thead><tr><th>Customer</th><th>Vehicle</th><th>Start</th><th>Status</th></tr></thead><tbody>" +
+          pickupRows.join("") +
+          "</tbody></table>";
+      }
+    }
+
+    var openWorkOrdersContainer = document.getElementById("open-work-orders");
+    if (openWorkOrdersContainer && isElementEffectivelyEmpty(openWorkOrdersContainer)) {
+      var active = [];
+      var safeWorkOrders = Array.isArray(workOrders) ? workOrders : [];
+      for (var q = 0; q < safeWorkOrders.length; q += 1) {
+        var status = safeWorkOrders[q] && safeWorkOrders[q].status;
+        if (status === "open" || status === "in_progress" || status === "on_hold") {
+          active.push(safeWorkOrders[q]);
+        }
+      }
+      if (active.length === 0) {
+        openWorkOrdersContainer.innerHTML = "<p>No open work orders.</p>";
+      } else {
+        var plateByVehicleId = {};
+        var safeVehiclesForWorkOrders = Array.isArray(vehicles) ? vehicles : [];
+        for (var r = 0; r < safeVehiclesForWorkOrders.length; r += 1) {
+          plateByVehicleId[safeVehiclesForWorkOrders[r].id] = safeVehiclesForWorkOrders[r].plateNumber || "";
+        }
+        var workOrderRows = [];
+        for (var s = 0; s < active.length && s < 8; s += 1) {
+          var item = active[s] || {};
+          workOrderRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(plateByVehicleId[item.vehicleId] || item.vehicleId || "") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(item.title || "") +
+              "</td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(item.priority || "n/a") +
+              "</span></td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(item.status || "n/a") +
+              "</span></td>" +
+              "<td>" +
+              escapeHtml(item.scheduledDate || "n/a") +
+              "</td>" +
+              "</tr>"
+          );
+        }
+        openWorkOrdersContainer.innerHTML =
+          "<table><thead><tr><th>Vehicle</th><th>Title</th><th>Priority</th><th>Status</th><th>Scheduled</th></tr></thead><tbody>" +
+          workOrderRows.join("") +
+          "</tbody></table>";
+      }
+    }
+  }
+
+  function runHomePageFallback() {
+    requestJson("/api/dashboard", function (dashboardError, dashboard) {
+      if (dashboardError) {
+        return;
+      }
+      requestJson("/api/vehicles", function (_vehiclesError, vehicles) {
+        requestJson("/api/customers", function (_customersError, customers) {
+          requestJson("/api/work-orders", function (_workOrdersError, workOrders) {
+            renderHomeFallback(dashboard, vehicles || [], customers || [], workOrders || []);
+          });
+        });
+      });
+    });
+  }
+
   function runFleetPageFallback() {
     requestJson("/api/vehicles", function (error, vehicles) {
       if (error) {
@@ -208,6 +349,10 @@
 
   function bootFallback() {
     var page = (document.body && document.body.getAttribute("data-page")) || "";
+    if (page === "home") {
+      runHomePageFallback();
+      return;
+    }
     if (page === "fleet") {
       runFleetPageFallback();
       return;
