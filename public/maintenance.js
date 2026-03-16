@@ -49,7 +49,10 @@ function populateVehicleSelects() {
     state.selectedVehicleId = state.vehicles[0].id;
   }
   if (state.selectedVehicleId) {
-    document.getElementById("document-list-vehicle-select").value = state.selectedVehicleId;
+    const documentListSelect = document.getElementById("document-list-vehicle-select");
+    if (documentListSelect) {
+      documentListSelect.value = state.selectedVehicleId;
+    }
   }
 }
 
@@ -82,6 +85,9 @@ function updateFormAvailability() {
 
 function renderDocuments() {
   const container = document.getElementById("vehicle-document-list");
+  if (!container) {
+    return;
+  }
   if (state.documents.length === 0) {
     container.innerHTML = "<p>No documents uploaded for this vehicle.</p>";
     renderPaginationControls("document-pagination", null);
@@ -131,6 +137,9 @@ function renderDocuments() {
 
 function renderWorkOrders() {
   const container = document.getElementById("work-order-list");
+  if (!container) {
+    return;
+  }
   if (state.workOrders.length === 0) {
     container.innerHTML = "<p>No work orders yet.</p>";
     renderPaginationControls("work-order-pagination", null);
@@ -220,100 +229,110 @@ function attachHandlers() {
   const documentList = document.getElementById("vehicle-document-list");
   const workOrderList = document.getElementById("work-order-list");
 
-  documentForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const formData = new FormData(documentForm);
-    const vehicleId = formData.get("vehicleId");
-    try {
-      await request(`/api/vehicles/${vehicleId}/documents`, {
-        method: "POST",
-        body: formData,
-      });
-      showToast("Document uploaded.");
-      documentForm.reset();
-      await loadMaintenanceData();
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+  if (documentForm) {
+    documentForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(documentForm);
+      const vehicleId = formData.get("vehicleId");
+      try {
+        await request(`/api/vehicles/${vehicleId}/documents`, {
+          method: "POST",
+          body: formData,
+        });
+        showToast("Document uploaded.");
+        documentForm.reset();
+        await loadMaintenanceData();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  documentVehicleListSelect.addEventListener("change", async () => {
-    try {
-      await loadDocuments(documentVehicleListSelect.value);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+  if (documentVehicleListSelect) {
+    documentVehicleListSelect.addEventListener("change", async () => {
+      try {
+        await loadDocuments(documentVehicleListSelect.value);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  documentList.addEventListener("click", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const documentId = target.dataset.deleteDocumentId;
-    if (!documentId || !state.selectedVehicleId) {
-      return;
-    }
+  if (documentList) {
+    documentList.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const documentId = target.dataset.deleteDocumentId;
+      if (!documentId || !state.selectedVehicleId) {
+        return;
+      }
 
-    try {
-      await request(`/api/vehicles/${state.selectedVehicleId}/documents/${documentId}`, {
-        method: "DELETE",
-      });
-      showToast("Document deleted.");
-      await loadDocuments(state.selectedVehicleId);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      try {
+        await request(`/api/vehicles/${state.selectedVehicleId}/documents/${documentId}`, {
+          method: "DELETE",
+        });
+        showToast("Document deleted.");
+        await loadDocuments(state.selectedVehicleId);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  workOrderForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const payload = Object.fromEntries(new FormData(workOrderForm).entries());
-    const vehicleId = payload.vehicleId;
-    delete payload.vehicleId;
-    try {
-      await request(`/api/vehicles/${vehicleId}/work-orders`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      showToast("Work order created.");
-      workOrderForm.reset();
-      state.workOrderPage = 1;
-      await loadMaintenanceData();
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+  if (workOrderForm) {
+    workOrderForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(workOrderForm).entries());
+      const vehicleId = payload.vehicleId;
+      delete payload.vehicleId;
+      try {
+        await request(`/api/vehicles/${vehicleId}/work-orders`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        showToast("Work order created.");
+        workOrderForm.reset();
+        state.workOrderPage = 1;
+        await loadMaintenanceData();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  workOrderList.addEventListener("click", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    if (!target.classList.contains("save-work-order-status")) {
-      return;
-    }
-    const workOrderId = target.dataset.workOrderId;
-    if (!workOrderId) {
-      return;
-    }
-    const select = workOrderList.querySelector(`select[data-work-order-status-id="${workOrderId}"]`);
-    if (!(select instanceof HTMLSelectElement)) {
-      return;
-    }
+  if (workOrderList) {
+    workOrderList.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      if (!target.classList.contains("save-work-order-status")) {
+        return;
+      }
+      const workOrderId = target.dataset.workOrderId;
+      if (!workOrderId) {
+        return;
+      }
+      const select = workOrderList.querySelector(`select[data-work-order-status-id="${workOrderId}"]`);
+      if (!(select instanceof HTMLSelectElement)) {
+        return;
+      }
 
-    try {
-      await request(`/api/work-orders/${workOrderId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: select.value }),
-      });
-      showToast("Work order updated.");
-      state.workOrderPage = 1;
-      await loadMaintenanceData();
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      try {
+        await request(`/api/work-orders/${workOrderId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: select.value }),
+        });
+        showToast("Work order updated.");
+        state.workOrderPage = 1;
+        await loadMaintenanceData();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 }
 
 async function bootstrap() {

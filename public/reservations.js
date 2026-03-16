@@ -31,6 +31,9 @@ function populateSelects() {
   const customerSelect = document.getElementById("reservation-customer");
   const reservationVehicleSelect = document.getElementById("reservation-vehicle");
   const quoteVehicleSelect = document.getElementById("quote-vehicle");
+  if (!customerSelect || !reservationVehicleSelect || !quoteVehicleSelect) {
+    return;
+  }
 
   const customerOptions = state.customers
     .map((customer) => `<option value="${customer.id}">${customer.firstName} ${customer.lastName} (${customer.email})</option>`)
@@ -113,6 +116,9 @@ function setInlineCustomerMode(isEnabled) {
 
 function renderReservations() {
   const container = document.getElementById("reservation-list");
+  if (!container) {
+    return;
+  }
   if (state.reservations.length === 0) {
     container.innerHTML = "<p>No reservations yet.</p>";
     renderPaginationControls("reservation-pagination", null);
@@ -192,6 +198,9 @@ function attachHandlers() {
   const quoteForm = document.getElementById("quote-form");
   const quoteResult = document.getElementById("quote-result");
   const inlineToggle = document.getElementById("reservation-create-customer-inline");
+  if (!reservationForm || !quoteForm || !quoteResult) {
+    return;
+  }
 
   setInlineCustomerMode(false);
   if (inlineToggle instanceof HTMLInputElement) {

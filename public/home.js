@@ -1,6 +1,11 @@
 const { request, formatMoney, showToast, sessionReady, markPageReady } = window.AppCommon;
 
 function renderMetrics(dashboard) {
+  const container = document.getElementById("dashboard-metrics");
+  if (!container) {
+    return;
+  }
+
   const metrics = [
     { label: "Fleet Size", value: dashboard.fleetSize },
     { label: "Available Vehicles", value: dashboard.availableVehicles },
@@ -15,7 +20,7 @@ function renderMetrics(dashboard) {
     { label: "Critical Alerts", value: dashboard.criticalVehicleAlerts || 0 },
   ];
 
-  document.getElementById("dashboard-metrics").innerHTML = metrics
+  container.innerHTML = metrics
     .map(
       (metric) => `
       <div class="metric">
@@ -29,6 +34,9 @@ function renderMetrics(dashboard) {
 
 function renderUpcomingPickups(dashboard, vehicles, customers) {
   const container = document.getElementById("upcoming-pickups");
+  if (!container) {
+    return;
+  }
   const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, `${vehicle.plateNumber} ${vehicle.make} ${vehicle.model}`]));
   const customerMap = new Map(customers.map((customer) => [customer.id, `${customer.firstName} ${customer.lastName}`]));
   const pickups = dashboard.upcomingPickups || [];
@@ -68,6 +76,9 @@ function renderUpcomingPickups(dashboard, vehicles, customers) {
 
 function renderOpenWorkOrders(workOrders, vehicles) {
   const container = document.getElementById("open-work-orders");
+  if (!container) {
+    return;
+  }
   const active = workOrders.filter((workOrder) => ["open", "in_progress", "on_hold"].includes(workOrder.status));
   const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle.plateNumber]));
 
