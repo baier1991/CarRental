@@ -29,6 +29,7 @@ const {
 const { hashPassword, verifyPassword, sanitizeUser, createSessionToken } = require("./domain/auth");
 
 const app = express();
+app.set("etag", false);
 const PORT = Number(process.env.PORT) || 3000;
 
 const RESERVATION_STATUSES = new Set([
@@ -61,7 +62,14 @@ app.use(express.urlencoded({ extended: false }));
 const publicDirectory = path.resolve(__dirname, "../public");
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/") || req.path.startsWith("/uploads/")) {
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    return next();
+  }
+
+  if (req.path.startsWith("/uploads/")) {
     return next();
   }
 

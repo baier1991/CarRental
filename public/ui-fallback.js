@@ -19,8 +19,11 @@
 
   function requestJson(url, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", url, true);
+    var requestUrl = String(url).indexOf("?") >= 0 ? url + "&_ts=" + Date.now() : url + "?_ts=" + Date.now();
+    xhr.open("GET", requestUrl, true);
     xhr.withCredentials = true;
+    xhr.setRequestHeader("Cache-Control", "no-cache");
+    xhr.setRequestHeader("Pragma", "no-cache");
     xhr.onreadystatechange = function () {
       if (xhr.readyState !== 4) {
         return;
