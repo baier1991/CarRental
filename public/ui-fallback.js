@@ -227,7 +227,7 @@
     var hasMinInput = minRaw.length > 0 && isFinite(minRate) && minRate >= 0;
     var hasMaxInput = maxRaw.length > 0 && isFinite(maxRate) && maxRate >= 0;
     if (!normalizedVehicles || normalizedVehicles.length === 0) {
-      return { minRate: minRate, maxRate: maxRate, hasMinRate: hasMinInput, hasMaxRate: hasMaxInput };
+      return { minRate: minRate, maxRate: maxRate, hasMinRate: false, hasMaxRate: false };
     }
     var bounds = getFleetRateBounds(normalizedVehicles);
     return {

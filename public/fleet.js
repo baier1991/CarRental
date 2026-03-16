@@ -106,7 +106,7 @@ function getEffectiveRateFilters() {
   const hasMinInput = minRateRaw.length > 0 && Number.isFinite(minRate) && minRate >= 0;
   const hasMaxInput = maxRateRaw.length > 0 && Number.isFinite(maxRate) && maxRate >= 0;
   if (!state.allVehicles.length) {
-    return { minRate, maxRate, hasMinRate: hasMinInput, hasMaxRate: hasMaxInput };
+    return { minRate, maxRate, hasMinRate: false, hasMaxRate: false };
   }
   const bounds = getDailyRateBounds();
   const hasMinRate = hasMinInput && minRate > bounds.min;
