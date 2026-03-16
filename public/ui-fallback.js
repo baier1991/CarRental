@@ -1,5 +1,7 @@
 /* Safety fallback: render key lists when main page script fails. */
 (function () {
+  var APP_BOOT_KEY = "__carRentalBoot";
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -46,6 +48,29 @@
       return false;
     }
     return String(element.textContent || "").trim().length === 0;
+  }
+
+  function getBootState() {
+    var bootState = window[APP_BOOT_KEY];
+    if (!bootState || typeof bootState !== "object") {
+      return { bootDetected: false, pageStatus: {} };
+    }
+    if (!bootState.pageStatus || typeof bootState.pageStatus !== "object") {
+      bootState.pageStatus = {};
+    }
+    return bootState;
+  }
+
+  function getPageKey() {
+    if (isVehicleProfilePath()) {
+      return "vehicle-profile";
+    }
+    return (document.body && document.body.getAttribute("data-page")) || "";
+  }
+
+  function isMainPageReady(page) {
+    var bootState = getBootState();
+    return Boolean(bootState.pageStatus && bootState.pageStatus[page] === "ready");
   }
 
   function normalizeFleetVehicles(vehicles) {
@@ -1198,12 +1223,19 @@
   }
 
   function bootFallback() {
-    if (isVehicleProfilePath()) {
+    var page = getPageKey();
+    if (!page) {
+      return;
+    }
+    if (isMainPageReady(page)) {
+      return;
+    }
+
+    if (page === "vehicle-profile") {
       runVehicleProfileFallback();
       return;
     }
 
-    var page = (document.body && document.body.getAttribute("data-page")) || "";
     if (page === "home") {
       runHomePageFallback();
       return;
