@@ -427,6 +427,21 @@ function reseedTenantOperationalData(store, tenant) {
   };
 }
 
+function ensureTenantOperationalData(store, tenant) {
+  const tenantId = tenant.id;
+  const hasOperationalData =
+    store.vehicles.some((item) => item.tenantId === tenantId) ||
+    store.customers.some((item) => item.tenantId === tenantId) ||
+    store.reservations.some((item) => item.tenantId === tenantId) ||
+    store.workOrders.some((item) => item.tenantId === tenantId) ||
+    store.vehicleDocuments.some((item) => item.tenantId === tenantId);
+
+  if (hasOperationalData) {
+    return { applied: false, reason: "Tenant already has operational data." };
+  }
+  return reseedTenantOperationalData(store, tenant);
+}
+
 function authenticateTenantUser(store, { tenantSlug, email, password }) {
   const normalizedTenantSlug = String(tenantSlug || "")
     .trim()
@@ -502,6 +517,7 @@ app.post("/login", (req, res) => {
     return res.redirect(`/login.html?error=invalid_credentials${nextQuery}`);
   }
 
+  ensureTenantOperationalData(store, auth.tenant);
   const token = createSessionForUser(store, auth.user, auth.tenant);
   setSessionCookie(res, token);
   return res.redirect(nextPath);
@@ -630,6 +646,7 @@ app.post("/api/auth/login", (req, res) => {
     return res.status(401).json({ error: "Invalid tenant credentials." });
   }
   const { tenant, user } = auth;
+  ensureTenantOperationalData(store, tenant);
   const token = createSessionForUser(store, user, tenant);
   setSessionCookie(res, token);
 
@@ -651,6 +668,7 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
 });
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
+  ensureTenantOperationalData(req.store, req.auth.tenant);
   return res.json({
     user: sanitizeUser(req.auth.user),
     tenant: {
