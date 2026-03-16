@@ -159,7 +159,7 @@
       category: String(form.elements.category ? form.elements.category.value : "").trim().toLowerCase(),
       branch: String(form.elements.branch ? form.elements.branch.value : "").trim().toUpperCase(),
       minRate: isFinite(minRateNumber) && minRateNumber >= 0 ? String(minRateNumber) : "",
-      maxRate: isFinite(maxRateNumber) && maxRateNumber >= 0 ? String(maxRateNumber) : "",
+      maxRate: isFinite(maxRateNumber) && maxRateNumber > 0 ? String(maxRateNumber) : "",
       sort: String(form.elements.sort ? form.elements.sort.value : "plate_asc"),
     };
   }
@@ -242,7 +242,7 @@
     var minRate = Number(minRaw);
     var maxRate = Number(maxRaw);
     var hasMinInput = minRaw.length > 0 && isFinite(minRate) && minRate >= 0;
-    var hasMaxInput = maxRaw.length > 0 && isFinite(maxRate) && maxRate >= 0;
+    var hasMaxInput = maxRaw.length > 0 && isFinite(maxRate) && maxRate > 0;
     if (!normalizedVehicles || normalizedVehicles.length === 0) {
       return { minRate: minRate, maxRate: maxRate, hasMinRate: false, hasMaxRate: false };
     }

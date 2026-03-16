@@ -64,13 +64,17 @@ function normalizeVehicleForFiltering(vehicle) {
   };
 }
 
-function normalizeRateFilterValue(rawValue) {
+function normalizeRateFilterValue(rawValue, options = {}) {
+  const { allowZero = true } = options;
   const normalized = String(rawValue ?? "").trim();
   if (!normalized) {
     return "";
   }
   const parsed = Number(normalized);
   if (!Number.isFinite(parsed) || parsed < 0) {
+    return "";
+  }
+  if (!allowZero && parsed <= 0) {
     return "";
   }
   return String(parsed);
@@ -427,8 +431,8 @@ function applyFilterFormValues(formData) {
   state.filters.status = String(formData.get("status") || "");
   state.filters.category = String(formData.get("category") || "").trim().toLowerCase();
   state.filters.branch = String(formData.get("branch") || "").trim().toUpperCase();
-  let minRate = normalizeRateFilterValue(formData.get("minRate"));
-  let maxRate = normalizeRateFilterValue(formData.get("maxRate"));
+  let minRate = normalizeRateFilterValue(formData.get("minRate"), { allowZero: true });
+  let maxRate = normalizeRateFilterValue(formData.get("maxRate"), { allowZero: false });
   if (minRate && maxRate && Number(minRate) > Number(maxRate)) {
     [minRate, maxRate] = [maxRate, minRate];
   }
@@ -472,8 +476,8 @@ function initializeFiltersFromUrl() {
   state.filters.status = params.get("status") || DEFAULT_FILTERS.status;
   state.filters.category = params.get("category") || DEFAULT_FILTERS.category;
   state.filters.branch = params.get("branch") || DEFAULT_FILTERS.branch;
-  state.filters.minRate = normalizeRateFilterValue(params.get("minRate"));
-  state.filters.maxRate = normalizeRateFilterValue(params.get("maxRate"));
+  state.filters.minRate = normalizeRateFilterValue(params.get("minRate"), { allowZero: true });
+  state.filters.maxRate = normalizeRateFilterValue(params.get("maxRate"), { allowZero: false });
   state.hasRateParamsFromUrl = params.has("minRate") || params.has("maxRate");
   const sort = params.get("sort") || DEFAULT_FILTERS.sort;
   state.filters.sort = SORT_OPTIONS.has(sort) ? sort : DEFAULT_FILTERS.sort;
