@@ -21,6 +21,35 @@ function showToast(message, isError = false) {
   }, 2800);
 }
 
+function normalizeNextPath(pathValue) {
+  const nextPath = String(pathValue || "").trim();
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return "/";
+  }
+  if (
+    nextPath === "/login" ||
+    nextPath === "/login/" ||
+    nextPath.startsWith("/login.html") ||
+    nextPath.startsWith("/login?")
+  ) {
+    return "/";
+  }
+  if (nextPath.startsWith("/api/")) {
+    return "/";
+  }
+  return nextPath || "/";
+}
+
+function buildLoginUrl() {
+  const nextPath = normalizeNextPath(
+    `${window.location.pathname || "/"}${window.location.search || ""}${window.location.hash || ""}`
+  );
+  if (nextPath === "/" || nextPath === "/index.html") {
+    return "/login.html";
+  }
+  return `/login.html?next=${encodeURIComponent(nextPath)}`;
+}
+
 async function request(url, options = {}) {
   const headers = new Headers(options.headers || {});
   const isFormData = options.body instanceof FormData;
@@ -39,7 +68,7 @@ async function request(url, options = {}) {
   if (response.status === 401 && !options.suppressAuthRedirect) {
     const currentPath = window.location.pathname;
     if (!currentPath.endsWith("/login.html")) {
-      window.location.replace("/login.html");
+      window.location.replace(buildLoginUrl());
     }
   }
 
@@ -264,7 +293,7 @@ async function initializeSession() {
 
     return session;
   } catch (_error) {
-    window.location.replace("/login.html");
+    window.location.replace(buildLoginUrl());
     return null;
   }
 }

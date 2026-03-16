@@ -17,10 +17,21 @@ function populateVehicleSelects() {
     document.getElementById("document-vehicle-select"),
     document.getElementById("document-list-vehicle-select"),
     document.getElementById("work-order-vehicle"),
-  ];
+  ].filter(Boolean);
+
+  if (selects.length === 0) {
+    return;
+  }
+
+  const hasVehicles = state.vehicles.length > 0;
 
   selects.forEach((select) => {
     const previous = select.value;
+    if (!hasVehicles) {
+      select.innerHTML = '<option value="">No vehicles available</option>';
+      select.value = "";
+      return;
+    }
     select.innerHTML = state.vehicles
       .map((vehicle) => `<option value="${vehicle.id}">${vehicleLabel(vehicle)}</option>`)
       .join("");
@@ -29,11 +40,43 @@ function populateVehicleSelects() {
     }
   });
 
+  if (!hasVehicles) {
+    state.selectedVehicleId = null;
+    return;
+  }
+
   if (!state.selectedVehicleId && state.vehicles[0]) {
     state.selectedVehicleId = state.vehicles[0].id;
   }
   if (state.selectedVehicleId) {
     document.getElementById("document-list-vehicle-select").value = state.selectedVehicleId;
+  }
+}
+
+function updateFormAvailability() {
+  const hasVehicles = state.vehicles.length > 0;
+  const documentForm = document.getElementById("vehicle-document-form");
+  const workOrderForm = document.getElementById("work-order-form");
+  const documentHint = document.getElementById("document-form-hint");
+  const workOrderHint = document.getElementById("work-order-form-hint");
+
+  [documentForm, workOrderForm].forEach((form) => {
+    if (!form) {
+      return;
+    }
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton instanceof HTMLButtonElement) {
+      submitButton.disabled = !hasVehicles;
+    }
+  });
+
+  if (documentHint) {
+    documentHint.classList.toggle("hidden", hasVehicles);
+    documentHint.textContent = hasVehicles ? "" : "Add a vehicle before uploading compliance documents.";
+  }
+  if (workOrderHint) {
+    workOrderHint.classList.toggle("hidden", hasVehicles);
+    workOrderHint.textContent = hasVehicles ? "" : "Add a vehicle before creating work orders.";
   }
 }
 
@@ -164,6 +207,7 @@ async function loadMaintenanceData() {
   state.workOrders = workOrders;
   state.workOrderPage = 1;
   populateVehicleSelects();
+  updateFormAvailability();
   renderWorkOrders();
   const fallbackVehicleId = state.vehicles.length > 0 ? state.vehicles[0].id : null;
   await loadDocuments(state.selectedVehicleId || fallbackVehicleId || null);

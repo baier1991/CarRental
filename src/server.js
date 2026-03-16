@@ -139,9 +139,42 @@ function parseCookies(cookieHeader = "") {
       }
       const key = pair.slice(0, index).trim();
       const value = pair.slice(index + 1).trim();
-      acc[key] = decodeURIComponent(value);
+      let decodedValue = value;
+      try {
+        decodedValue = decodeURIComponent(value);
+      } catch (_error) {
+        decodedValue = value;
+      }
+      acc[key] = decodedValue;
       return acc;
     }, {});
+}
+
+function normalizeNextPath(rawNextPath) {
+  const nextPath = String(rawNextPath || "").trim();
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return "/";
+  }
+  if (
+    nextPath === "/login" ||
+    nextPath === "/login/" ||
+    nextPath.startsWith("/login.html") ||
+    nextPath.startsWith("/login?")
+  ) {
+    return "/";
+  }
+  if (nextPath.startsWith("/api/")) {
+    return "/";
+  }
+  return nextPath || "/";
+}
+
+function buildLoginRedirectUrl(nextPath) {
+  const normalizedNextPath = normalizeNextPath(nextPath);
+  if (normalizedNextPath === "/" || normalizedNextPath === "/index.html") {
+    return "/login.html";
+  }
+  return `/login.html?next=${encodeURIComponent(normalizedNextPath)}`;
 }
 
 function getSessionTokenFromRequest(req) {
@@ -441,16 +474,10 @@ function createSessionForUser(store, user, tenant) {
 }
 
 app.get("/login.html", (req, res) => {
-  const { tenantSlug, email, password } = req.query || {};
-  if (tenantSlug && email && password) {
-    const store = readStore();
-    const auth = authenticateTenantUser(store, { tenantSlug, email, password });
-    if (auth) {
-      const token = createSessionForUser(store, auth.user, auth.tenant);
-      setSessionCookie(res, token);
-      return res.redirect("/index.html");
-    }
-    return res.redirect("/login.html?error=invalid_credentials");
+  const store = readStore();
+  const authContext = resolveAuthContext(store, req);
+  if (authContext) {
+    return res.redirect(normalizeNextPath(req.query?.next));
   }
 
   return res.sendFile(path.resolve(publicDirectory, "login.html"));
@@ -461,20 +488,23 @@ app.get("/login", (_req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { tenantSlug, email, password } = req.body || {};
+  const { tenantSlug, email, password, next } = req.body || {};
+  const nextPath = normalizeNextPath(next || req.query?.next);
   if (!tenantSlug || !email || !password) {
-    return res.redirect("/login.html?error=missing_fields");
+    const nextQuery = nextPath !== "/" ? `&next=${encodeURIComponent(nextPath)}` : "";
+    return res.redirect(`/login.html?error=missing_fields${nextQuery}`);
   }
 
   const store = readStore();
   const auth = authenticateTenantUser(store, { tenantSlug, email, password });
   if (!auth) {
-    return res.redirect("/login.html?error=invalid_credentials");
+    const nextQuery = nextPath !== "/" ? `&next=${encodeURIComponent(nextPath)}` : "";
+    return res.redirect(`/login.html?error=invalid_credentials${nextQuery}`);
   }
 
   const token = createSessionForUser(store, auth.user, auth.tenant);
   setSessionCookie(res, token);
-  return res.redirect("/index.html");
+  return res.redirect(nextPath);
 });
 
 app.get(["/home", "/dashboard"], (_req, res) => {
@@ -485,7 +515,7 @@ app.get(PROTECTED_PAGE_PATHS, (req, res, next) => {
   const store = readStore();
   const authContext = resolveAuthContext(store, req);
   if (!authContext) {
-    return res.redirect("/login.html");
+    return res.redirect(buildLoginRedirectUrl(req.originalUrl || req.path));
   }
 
   const requestedPath = req.path === "/" ? "/index.html" : req.path;
@@ -511,7 +541,7 @@ app.use((req, res, next) => {
   const store = readStore();
   const authContext = resolveAuthContext(store, req);
   if (!authContext) {
-    return res.redirect("/login.html");
+    return res.redirect(buildLoginRedirectUrl(req.originalUrl || req.path));
   }
 
   return res.sendFile(path.resolve(publicDirectory, "index.html"));
@@ -1494,4 +1524,6 @@ if (require.main === module) {
 module.exports = {
   app,
   calculateDashboard,
+  normalizeNextPath,
+  buildLoginRedirectUrl,
 };

@@ -32,15 +32,60 @@ function populateSelects() {
   const reservationVehicleSelect = document.getElementById("reservation-vehicle");
   const quoteVehicleSelect = document.getElementById("quote-vehicle");
 
-  customerSelect.innerHTML = state.customers
+  const customerOptions = state.customers
     .map((customer) => `<option value="${customer.id}">${customer.firstName} ${customer.lastName} (${customer.email})</option>`)
     .join("");
+  customerSelect.innerHTML = customerOptions || '<option value="">No customers available</option>';
 
   const vehicleOptions = state.vehicles
     .map((vehicle) => `<option value="${vehicle.id}">${vehicleLabel(vehicle)}</option>`)
     .join("");
-  reservationVehicleSelect.innerHTML = vehicleOptions;
-  quoteVehicleSelect.innerHTML = vehicleOptions;
+  const vehicleFallback = '<option value="">No vehicles available</option>';
+  reservationVehicleSelect.innerHTML = vehicleOptions || vehicleFallback;
+  quoteVehicleSelect.innerHTML = vehicleOptions || vehicleFallback;
+}
+
+function updateFormAvailability() {
+  const reservationForm = document.getElementById("reservation-form");
+  const quoteForm = document.getElementById("quote-form");
+  const reservationSubmit = reservationForm ? reservationForm.querySelector('button[type="submit"]') : null;
+  const quoteSubmit = quoteForm ? quoteForm.querySelector('button[type="submit"]') : null;
+  const reservationHint = document.getElementById("reservation-form-hint");
+  const quoteHint = document.getElementById("quote-form-hint");
+
+  const hasCustomers = state.customers.length > 0;
+  const hasVehicles = state.vehicles.length > 0;
+  const canCreateReservation = hasCustomers && hasVehicles;
+  const canCreateQuote = hasVehicles;
+
+  if (reservationSubmit instanceof HTMLButtonElement) {
+    reservationSubmit.disabled = !canCreateReservation;
+  }
+  if (quoteSubmit instanceof HTMLButtonElement) {
+    quoteSubmit.disabled = !canCreateQuote;
+  }
+
+  if (reservationHint) {
+    if (canCreateReservation) {
+      reservationHint.classList.add("hidden");
+      reservationHint.textContent = "";
+    } else {
+      reservationHint.classList.remove("hidden");
+      reservationHint.textContent = !hasCustomers
+        ? "Add at least one customer before creating a reservation."
+        : "Add at least one vehicle before creating a reservation.";
+    }
+  }
+
+  if (quoteHint) {
+    if (canCreateQuote) {
+      quoteHint.classList.add("hidden");
+      quoteHint.textContent = "";
+    } else {
+      quoteHint.classList.remove("hidden");
+      quoteHint.textContent = "Add a vehicle before calculating quotes.";
+    }
+  }
 }
 
 function setInlineCustomerMode(isEnabled) {
@@ -138,6 +183,7 @@ async function loadReservationData() {
   state.reservations = reservations;
   state.reservationPage = 1;
   populateSelects();
+  updateFormAvailability();
   renderReservations();
 }
 
@@ -183,6 +229,9 @@ function attachHandlers() {
           body: JSON.stringify(inlineCustomerPayload),
         });
         payload.customerId = inlineCustomerCreated.id;
+      }
+      if (!payload.customerId || !payload.vehicleId) {
+        throw new Error("Please select both a customer and a vehicle.");
       }
 
       const reservation = await request("/api/reservations", {

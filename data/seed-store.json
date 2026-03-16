@@ -1,6 +1,6 @@
 {
   "meta": {
-    "demoDataVersion": "2026-03-15-demo-reset-2"
+    "demoDataVersion": "2026-03-16-demo-expanded-1"
   },
   "tenants": [
     {
@@ -153,6 +153,146 @@
       ],
       "createdAt": "2026-03-01T10:00:00.000Z",
       "updatedAt": "2026-03-01T10:00:00.000Z"
+    },
+    {
+      "id": "veh-ac-003",
+      "tenantId": "tenant-acme",
+      "plateNumber": "DXB-7714",
+      "make": "Kia",
+      "model": "Seltos",
+      "year": 2024,
+      "category": "suv",
+      "dailyRate": 78,
+      "weekendDailyRate": 89,
+      "weeklyRate": 490,
+      "monthlyRate": 1740,
+      "securityDeposit": 700,
+      "status": "maintenance",
+      "location": "Dubai Business Bay",
+      "branchCode": "DXB-03",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "odometerKm": 41200,
+      "mileageLimitPerDay": 250,
+      "extraKmRate": 0.4,
+      "registrationExpiryDate": "2026-06-18",
+      "insuranceExpiryDate": "2026-06-10",
+      "inspectionDueDate": "2026-05-28",
+      "nextServiceAtKm": 42000,
+      "nextServiceDate": "2026-03-22",
+      "ownershipType": "owned",
+      "features": [
+        "bluetooth",
+        "parkingSensors",
+        "backupCamera"
+      ],
+      "createdAt": "2026-03-03T09:30:00.000Z",
+      "updatedAt": "2026-03-03T09:30:00.000Z"
+    },
+    {
+      "id": "veh-ac-004",
+      "tenantId": "tenant-acme",
+      "plateNumber": "DXB-9982",
+      "make": "Tesla",
+      "model": "Model 3",
+      "year": 2025,
+      "category": "electric",
+      "dailyRate": 135,
+      "weekendDailyRate": 150,
+      "weeklyRate": 860,
+      "monthlyRate": 3100,
+      "securityDeposit": 1200,
+      "status": "available",
+      "location": "Dubai Airport",
+      "branchCode": "DXB-01",
+      "transmission": "Automatic",
+      "fuelType": "Electric",
+      "odometerKm": 9800,
+      "mileageLimitPerDay": 300,
+      "extraKmRate": 0.8,
+      "registrationExpiryDate": "2026-12-01",
+      "insuranceExpiryDate": "2026-11-10",
+      "inspectionDueDate": "2026-12-15",
+      "nextServiceAtKm": 15000,
+      "nextServiceDate": "2026-08-01",
+      "ownershipType": "leased",
+      "features": [
+        "bluetooth",
+        "appleCarPlay",
+        "androidAuto",
+        "parkingSensors"
+      ],
+      "createdAt": "2026-03-03T09:45:00.000Z",
+      "updatedAt": "2026-03-03T09:45:00.000Z"
+    },
+    {
+      "id": "veh-hz-002",
+      "tenantId": "tenant-horizon",
+      "plateNumber": "SHJ-8120",
+      "make": "Toyota",
+      "model": "Yaris",
+      "year": 2024,
+      "category": "compact",
+      "dailyRate": 54,
+      "weekendDailyRate": 61,
+      "weeklyRate": 330,
+      "monthlyRate": 1190,
+      "securityDeposit": 500,
+      "status": "available",
+      "location": "Sharjah Al Majaz",
+      "branchCode": "SHJ-02",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "odometerKm": 25100,
+      "mileageLimitPerDay": 220,
+      "extraKmRate": 0.32,
+      "registrationExpiryDate": "2026-09-01",
+      "insuranceExpiryDate": "2026-08-24",
+      "inspectionDueDate": "2026-09-18",
+      "nextServiceAtKm": 30000,
+      "nextServiceDate": "2026-04-20",
+      "ownershipType": "owned",
+      "features": [
+        "bluetooth",
+        "backupCamera"
+      ],
+      "createdAt": "2026-03-03T10:00:00.000Z",
+      "updatedAt": "2026-03-03T10:00:00.000Z"
+    },
+    {
+      "id": "veh-hz-003",
+      "tenantId": "tenant-horizon",
+      "plateNumber": "SHJ-9042",
+      "make": "Ford",
+      "model": "Explorer",
+      "year": 2023,
+      "category": "suv",
+      "dailyRate": 98,
+      "weekendDailyRate": 108,
+      "weeklyRate": 620,
+      "monthlyRate": 2240,
+      "securityDeposit": 900,
+      "status": "inactive",
+      "location": "Sharjah Industrial Area",
+      "branchCode": "SHJ-03",
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "odometerKm": 60300,
+      "mileageLimitPerDay": 250,
+      "extraKmRate": 0.5,
+      "registrationExpiryDate": "2026-05-10",
+      "insuranceExpiryDate": "2026-05-02",
+      "inspectionDueDate": "2026-05-18",
+      "nextServiceAtKm": 62000,
+      "nextServiceDate": "2026-03-30",
+      "ownershipType": "owned",
+      "features": [
+        "bluetooth",
+        "parkingSensors",
+        "cruiseControl"
+      ],
+      "createdAt": "2026-03-03T10:10:00.000Z",
+      "updatedAt": "2026-03-03T10:10:00.000Z"
     }
   ],
   "customers": [
@@ -188,6 +328,50 @@
       "licenseNumber": "UAE55123",
       "createdAt": "2026-03-01T10:00:00.000Z",
       "updatedAt": "2026-03-01T10:00:00.000Z"
+    },
+    {
+      "id": "cus-ac-003",
+      "tenantId": "tenant-acme",
+      "firstName": "Leila",
+      "lastName": "Mansoor",
+      "email": "leila.mansoor@example.com",
+      "phone": "+971504448877",
+      "licenseNumber": "UAE77109",
+      "createdAt": "2026-03-02T11:15:00.000Z",
+      "updatedAt": "2026-03-02T11:15:00.000Z"
+    },
+    {
+      "id": "cus-ac-004",
+      "tenantId": "tenant-acme",
+      "firstName": "Omar",
+      "lastName": "Khalid",
+      "email": "omar.khalid@example.com",
+      "phone": "+971507763311",
+      "licenseNumber": "UAE90331",
+      "createdAt": "2026-03-02T11:16:00.000Z",
+      "updatedAt": "2026-03-02T11:16:00.000Z"
+    },
+    {
+      "id": "cus-hz-002",
+      "tenantId": "tenant-horizon",
+      "firstName": "Saeed",
+      "lastName": "Rahman",
+      "email": "saeed.rahman@example.com",
+      "phone": "+971508889922",
+      "licenseNumber": "UAE66210",
+      "createdAt": "2026-03-02T11:20:00.000Z",
+      "updatedAt": "2026-03-02T11:20:00.000Z"
+    },
+    {
+      "id": "cus-hz-003",
+      "tenantId": "tenant-horizon",
+      "firstName": "Fatima",
+      "lastName": "Noor",
+      "email": "fatima.noor@example.com",
+      "phone": "+971501117744",
+      "licenseNumber": "UAE44712",
+      "createdAt": "2026-03-02T11:25:00.000Z",
+      "updatedAt": "2026-03-02T11:25:00.000Z"
     }
   ],
   "reservations": [
@@ -256,6 +440,113 @@
       },
       "createdAt": "2026-03-05T08:00:00.000Z",
       "updatedAt": "2026-03-05T08:00:00.000Z"
+    },
+    {
+      "id": "res-ac-002",
+      "tenantId": "tenant-acme",
+      "customerId": "cus-ac-002",
+      "vehicleId": "veh-ac-001",
+      "startDate": "2026-03-26",
+      "endDate": "2026-03-30",
+      "status": "active",
+      "insuranceTier": "basic",
+      "addOns": [
+        "childSeat"
+      ],
+      "discountCode": null,
+      "notes": "Airport drop-off return",
+      "rentalDays": 4,
+      "pricing": {
+        "dailyRate": 59,
+        "basePrice": 236,
+        "insuranceTier": "basic",
+        "insurancePrice": 0,
+        "addOns": [
+          "childSeat"
+        ],
+        "addOnPrice": 28,
+        "subtotal": 264,
+        "discountCode": null,
+        "discountAmount": 0,
+        "discountedSubtotal": 264,
+        "taxRate": 0.12,
+        "tax": 31.68,
+        "total": 295.68
+      },
+      "createdAt": "2026-03-08T10:00:00.000Z",
+      "updatedAt": "2026-03-08T10:00:00.000Z"
+    },
+    {
+      "id": "res-ac-003",
+      "tenantId": "tenant-acme",
+      "customerId": "cus-ac-003",
+      "vehicleId": "veh-ac-004",
+      "startDate": "2026-04-02",
+      "endDate": "2026-04-07",
+      "status": "pending",
+      "insuranceTier": "premium",
+      "addOns": [
+        "gps",
+        "extraDriver"
+      ],
+      "discountCode": "CORPORATE15",
+      "notes": "Corporate account billing",
+      "rentalDays": 5,
+      "pricing": {
+        "dailyRate": 135,
+        "basePrice": 675,
+        "insuranceTier": "premium",
+        "insurancePrice": 150,
+        "addOns": [
+          "gps",
+          "extraDriver"
+        ],
+        "addOnPrice": 105,
+        "subtotal": 930,
+        "discountCode": "CORPORATE15",
+        "discountAmount": 139.5,
+        "discountedSubtotal": 790.5,
+        "taxRate": 0.12,
+        "tax": 94.86,
+        "total": 885.36
+      },
+      "createdAt": "2026-03-09T10:20:00.000Z",
+      "updatedAt": "2026-03-09T10:20:00.000Z"
+    },
+    {
+      "id": "res-hz-002",
+      "tenantId": "tenant-horizon",
+      "customerId": "cus-hz-002",
+      "vehicleId": "veh-hz-002",
+      "startDate": "2026-03-29",
+      "endDate": "2026-04-01",
+      "status": "confirmed",
+      "insuranceTier": "plus",
+      "addOns": [
+        "gps"
+      ],
+      "discountCode": null,
+      "notes": "Weekend extension expected",
+      "rentalDays": 3,
+      "pricing": {
+        "dailyRate": 54,
+        "basePrice": 162,
+        "insuranceTier": "plus",
+        "insurancePrice": 54,
+        "addOns": [
+          "gps"
+        ],
+        "addOnPrice": 27,
+        "subtotal": 243,
+        "discountCode": null,
+        "discountAmount": 0,
+        "discountedSubtotal": 243,
+        "taxRate": 0.12,
+        "tax": 29.16,
+        "total": 272.16
+      },
+      "createdAt": "2026-03-08T11:00:00.000Z",
+      "updatedAt": "2026-03-08T11:00:00.000Z"
     }
   ],
   "vehicleDocuments": [],
@@ -294,6 +585,60 @@
       "notes": "",
       "createdAt": "2026-03-06T07:00:00.000Z",
       "updatedAt": "2026-03-06T07:00:00.000Z",
+      "completedAt": null
+    },
+    {
+      "id": "wo-ac-002",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-001",
+      "title": "Battery replacement",
+      "description": "Swap battery and run diagnostics",
+      "priority": "high",
+      "status": "completed",
+      "scheduledDate": "2026-03-10",
+      "odometerKm": 22480,
+      "costEstimate": 180,
+      "actualCost": 190,
+      "vendorName": "Downtown Auto Electric",
+      "notes": "Warranty registered",
+      "createdAt": "2026-03-08T08:30:00.000Z",
+      "updatedAt": "2026-03-11T15:20:00.000Z",
+      "completedAt": "2026-03-11T15:20:00.000Z"
+    },
+    {
+      "id": "wo-ac-003",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-003",
+      "title": "Brake pads and tire rotation",
+      "description": "Resolve brake noise and rotate all tires",
+      "priority": "critical",
+      "status": "in_progress",
+      "scheduledDate": "2026-03-19",
+      "odometerKm": 41200,
+      "costEstimate": 340,
+      "actualCost": null,
+      "vendorName": "Business Bay Auto Hub",
+      "notes": "Vehicle unavailable until completed",
+      "createdAt": "2026-03-15T09:40:00.000Z",
+      "updatedAt": "2026-03-16T08:20:00.000Z",
+      "completedAt": null
+    },
+    {
+      "id": "wo-hz-002",
+      "tenantId": "tenant-horizon",
+      "vehicleId": "veh-hz-003",
+      "title": "Bodywork estimate",
+      "description": "Front bumper replacement estimate",
+      "priority": "high",
+      "status": "open",
+      "scheduledDate": "2026-03-21",
+      "odometerKm": 60300,
+      "costEstimate": 480,
+      "actualCost": null,
+      "vendorName": "Sharjah Body Center",
+      "notes": "Waiting insurance approval",
+      "createdAt": "2026-03-14T10:05:00.000Z",
+      "updatedAt": "2026-03-14T10:05:00.000Z",
       "completedAt": null
     }
   ]

@@ -12,6 +12,7 @@
         <h1>Client Login</h1>
         <p class="subtitle">Each client has isolated credentials and data.</p>
         <form id="login-form" class="stack" method="post" action="/login">
+          <input type="hidden" id="login-next" name="next" value="" />
           <label>
             Client Slug
             <input name="tenantSlug" placeholder="acme" required autocomplete="organization" />
