@@ -1215,6 +1215,281 @@
     });
   }
 
+  function getMaintenanceComplianceState(expiryDate) {
+    if (!expiryDate || !/^\d{4}-\d{2}-\d{2}$/.test(String(expiryDate))) {
+      return { label: "No expiry", badgeClass: "badge-muted", sortValue: Number.POSITIVE_INFINITY };
+    }
+    var today = new Date();
+    var start = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    var target = new Date(expiryDate + "T00:00:00.000Z");
+    var diffDays = Math.floor((target.getTime() - start.getTime()) / 86400000);
+    if (diffDays < 0) {
+      return { label: "Expired", badgeClass: "badge-danger", sortValue: target.getTime() };
+    }
+    if (diffDays <= 30) {
+      return { label: "Expiring Soon", badgeClass: "badge-warning", sortValue: target.getTime() };
+    }
+    return { label: "Valid", badgeClass: "badge-success", sortValue: target.getTime() };
+  }
+
+  function populateMaintenanceVehicleSelects(vehicles) {
+    var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+    var createSelectIds = ["document-vehicle-select", "work-order-vehicle"];
+    for (var i = 0; i < createSelectIds.length; i += 1) {
+      var createSelect = document.getElementById(createSelectIds[i]);
+      if (!createSelect) {
+        continue;
+      }
+      if (createSelect.options.length > 1 || createSelect.dataset.handlerBound === "true") {
+        continue;
+      }
+      if (safeVehicles.length === 0) {
+        createSelect.innerHTML = '<option value="">No vehicles available</option>';
+      } else {
+        var createOptions = ['<option value="">Select vehicle</option>'];
+        for (var j = 0; j < safeVehicles.length; j += 1) {
+          createOptions.push(
+            '<option value="' +
+              escapeHtml(safeVehicles[j].id || "") +
+              '">' +
+              escapeHtml(
+                (safeVehicles[j].plateNumber || "n/a") +
+                  " - " +
+                  (safeVehicles[j].make || "") +
+                  " " +
+                  (safeVehicles[j].model || "")
+              ) +
+              "</option>"
+          );
+        }
+        createSelect.innerHTML = createOptions.join("");
+        if (safeVehicles[0] && safeVehicles[0].id) {
+          createSelect.value = safeVehicles[0].id;
+        }
+      }
+    }
+
+    var filterSelectIds = [
+      { id: "document-list-vehicle-select", label: "All vehicles (documents)" },
+      { id: "work-order-filter-vehicle", label: "All vehicles" },
+    ];
+    for (var k = 0; k < filterSelectIds.length; k += 1) {
+      var filterConfig = filterSelectIds[k];
+      var filterSelect = document.getElementById(filterConfig.id);
+      if (!filterSelect) {
+        continue;
+      }
+      if (filterSelect.options.length > 1 || filterSelect.dataset.handlerBound === "true") {
+        continue;
+      }
+      var filterOptions = ['<option value="">' + escapeHtml(filterConfig.label) + "</option>"];
+      for (var m = 0; m < safeVehicles.length; m += 1) {
+        filterOptions.push(
+          '<option value="' +
+            escapeHtml(safeVehicles[m].id || "") +
+            '">' +
+            escapeHtml(
+              (safeVehicles[m].plateNumber || "n/a") +
+                " - " +
+                (safeVehicles[m].make || "") +
+                " " +
+                (safeVehicles[m].model || "")
+            ) +
+            "</option>"
+        );
+      }
+      filterSelect.innerHTML = filterOptions.join("");
+    }
+  }
+
+  function renderMaintenanceFallback(vehicles, documents, workOrders) {
+    var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+    var safeDocuments = Array.isArray(documents) ? documents : [];
+    var safeWorkOrders = Array.isArray(workOrders) ? workOrders : [];
+
+    populateMaintenanceVehicleSelects(safeVehicles);
+
+    var metricsContainer = document.getElementById("maintenance-overview-metrics");
+    if (metricsContainer && isElementEffectivelyEmpty(metricsContainer)) {
+      var expiredDocs = 0;
+      var expiringSoonDocs = 0;
+      var openWorkOrders = 0;
+      var overdueWorkOrders = 0;
+      var todayDate = new Date();
+      var todayDateOnly =
+        todayDate.getUTCFullYear() +
+        "-" +
+        String(todayDate.getUTCMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(todayDate.getUTCDate()).padStart(2, "0");
+
+      for (var i = 0; i < safeDocuments.length; i += 1) {
+        var compliance = getMaintenanceComplianceState(safeDocuments[i] && safeDocuments[i].expiryDate);
+        if (compliance.label === "Expired") {
+          expiredDocs += 1;
+        } else if (compliance.label === "Expiring Soon") {
+          expiringSoonDocs += 1;
+        }
+      }
+      for (var j = 0; j < safeWorkOrders.length; j += 1) {
+        var workOrder = safeWorkOrders[j] || {};
+        var status = String(workOrder.status || "");
+        if (status === "open" || status === "in_progress" || status === "on_hold") {
+          openWorkOrders += 1;
+          if (workOrder.scheduledDate && String(workOrder.scheduledDate) < todayDateOnly) {
+            overdueWorkOrders += 1;
+          }
+        }
+      }
+      metricsContainer.innerHTML =
+        '<div class="metric"><div class="label">Documents</div><div class="value">' +
+        safeDocuments.length +
+        '</div></div><div class="metric"><div class="label">Expired Docs</div><div class="value">' +
+        expiredDocs +
+        '</div></div><div class="metric"><div class="label">Expiring in 30d</div><div class="value">' +
+        expiringSoonDocs +
+        '</div></div><div class="metric"><div class="label">Open Work Orders</div><div class="value">' +
+        openWorkOrders +
+        '</div></div><div class="metric"><div class="label">Overdue Work Orders</div><div class="value">' +
+        overdueWorkOrders +
+        "</div></div>";
+    }
+
+    var documentList = document.getElementById("vehicle-document-list");
+    if (documentList && isElementEffectivelyEmpty(documentList)) {
+      if (safeDocuments.length === 0) {
+        documentList.innerHTML = "<p>No compliance documents uploaded yet.</p>";
+      } else {
+        var vehicleMap = {};
+        for (var k = 0; k < safeVehicles.length; k += 1) {
+          vehicleMap[safeVehicles[k].id] = safeVehicles[k];
+        }
+        var documentRows = [];
+        for (var m = 0; m < safeDocuments.length; m += 1) {
+          var documentItem = safeDocuments[m] || {};
+          var vehicle = vehicleMap[documentItem.vehicleId] || null;
+          var complianceState = getMaintenanceComplianceState(documentItem.expiryDate);
+          documentRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(
+                vehicle
+                  ? (vehicle.plateNumber || "n/a") + " - " + (vehicle.make || "") + " " + (vehicle.model || "")
+                  : documentItem.vehicleId || "n/a"
+              ) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(documentItem.documentType || "n/a") +
+              "</td>" +
+              '<td><span class="badge ' +
+              escapeHtml(complianceState.badgeClass) +
+              '">' +
+              escapeHtml(complianceState.label) +
+              "</span></td>" +
+              '<td><a href="' +
+              escapeHtml(documentItem.relativePath || "#") +
+              '" target="_blank" rel="noreferrer">' +
+              escapeHtml(documentItem.originalName || "document") +
+              "</a></td>" +
+              "<td>" +
+              escapeHtml(documentItem.uploadedAt ? String(documentItem.uploadedAt).slice(0, 10) : "n/a") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(documentItem.expiryDate || "n/a") +
+              "</td>" +
+              "</tr>"
+          );
+        }
+        documentList.innerHTML =
+          "<table><thead><tr><th>Vehicle</th><th>Type</th><th>Compliance</th><th>File</th><th>Uploaded</th><th>Expiry</th></tr></thead><tbody>" +
+          documentRows.join("") +
+          "</tbody></table>";
+      }
+    }
+
+    var workOrderList = document.getElementById("work-order-list");
+    if (workOrderList && isElementEffectivelyEmpty(workOrderList)) {
+      if (safeWorkOrders.length === 0) {
+        workOrderList.innerHTML = "<p>No work orders yet.</p>";
+      } else {
+        var workVehicleMap = {};
+        for (var n = 0; n < safeVehicles.length; n += 1) {
+          workVehicleMap[safeVehicles[n].id] = safeVehicles[n];
+        }
+        var workOrderRows = [];
+        for (var p = 0; p < safeWorkOrders.length; p += 1) {
+          var item = safeWorkOrders[p] || {};
+          var itemVehicle = workVehicleMap[item.vehicleId] || null;
+          workOrderRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(
+                itemVehicle
+                  ? (itemVehicle.plateNumber || "n/a") + " - " + (itemVehicle.make || "") + " " + (itemVehicle.model || "")
+                  : item.vehicleId || "n/a"
+              ) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(item.title || "n/a") +
+              "</td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(item.priority || "n/a") +
+              "</span></td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(item.status || "n/a") +
+              "</span></td>" +
+              "<td>" +
+              escapeHtml(item.scheduledDate || "n/a") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(
+                item.actualCost ? formatMoney(item.actualCost) : item.costEstimate ? "Est: " + formatMoney(item.costEstimate) : "n/a"
+              ) +
+              "</td>" +
+              "</tr>"
+          );
+        }
+        workOrderList.innerHTML =
+          "<table><thead><tr><th>Vehicle</th><th>Title</th><th>Priority</th><th>Status</th><th>Scheduled</th><th>Cost</th></tr></thead><tbody>" +
+          workOrderRows.join("") +
+          "</tbody></table>";
+      }
+    }
+  }
+
+  function runMaintenancePageFallback() {
+    requestJson("/api/vehicles", function (_vehiclesError, vehicles) {
+      var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+      requestJson("/api/work-orders", function (_workOrdersError, workOrders) {
+        requestJson("/api/vehicle-documents", function (documentsError, documents) {
+          if (!documentsError) {
+            renderMaintenanceFallback(safeVehicles, documents || [], workOrders || []);
+            return;
+          }
+          if (safeVehicles.length === 0) {
+            renderMaintenanceFallback(safeVehicles, [], workOrders || []);
+            return;
+          }
+          var pending = safeVehicles.length;
+          var aggregated = [];
+          for (var i = 0; i < safeVehicles.length; i += 1) {
+            (function (vehicleId) {
+              requestJson("/api/vehicles/" + encodeURIComponent(vehicleId) + "/documents", function (vehicleDocsError, vehicleDocs) {
+                if (!vehicleDocsError && Array.isArray(vehicleDocs)) {
+                  aggregated = aggregated.concat(vehicleDocs);
+                }
+                pending -= 1;
+                if (pending === 0) {
+                  renderMaintenanceFallback(safeVehicles, aggregated, workOrders || []);
+                }
+              });
+            })(safeVehicles[i].id);
+          }
+        });
+      });
+    });
+  }
+
   function isVehicleProfilePath() {
     var path = window.location.pathname || "";
     return path.endsWith("/vehicle-profile.html");
@@ -1435,6 +1710,10 @@
     }
     if (page === "reservations") {
       runReservationsPageFallback();
+      return;
+    }
+    if (page === "maintenance") {
+      runMaintenancePageFallback();
     }
   }
 

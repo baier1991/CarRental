@@ -47,6 +47,7 @@ const state = {
   workOrderPageSize: 8,
   documentSearchTimer: null,
   workOrderSearchTimer: null,
+  autoReseedAttempted: false,
 };
 
 function asArray(value) {
@@ -848,6 +849,23 @@ async function loadMaintenanceData() {
   } catch (_error) {
     state.allDocuments = [];
     failures.push("documents");
+  }
+
+  const userRole = state.session && state.session.user ? state.session.user.role : "";
+  if (state.vehicles.length === 0 && !state.autoReseedAttempted && userRole === "owner") {
+    state.autoReseedAttempted = true;
+    try {
+      const reseedResult = await request("/api/admin/reseed-tenant-demo", {
+        method: "POST",
+      });
+      if (reseedResult && reseedResult.applied) {
+        showToast("Demo maintenance data restored.");
+        await loadMaintenanceData();
+        return;
+      }
+    } catch (_reseedError) {
+      // Ignore reseed errors and continue with current page state.
+    }
   }
 
   populateVehicleSelects();
