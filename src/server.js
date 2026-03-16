@@ -49,6 +49,7 @@ const PROTECTED_PAGE_PATHS = [
   "/",
   "/index.html",
   "/fleet.html",
+  "/vehicle-profile.html",
   "/customers.html",
   "/reservations.html",
   "/maintenance.html",
@@ -845,7 +846,7 @@ app.get("/api/vehicles", requireAuth, (req, res) => {
   return res.json(vehicles);
 });
 
-app.post("/api/vehicles/import-csv", requireAuth, (req, res) => {
+app.post("/api/vehicles/import-csv", requireAuth, requireRoles("owner", "admin", "agent"), (req, res) => {
   const csvContent = req.body?.csvContent;
   const defaults = {
     location: req.body?.defaultLocation,
@@ -934,7 +935,7 @@ app.post("/api/vehicles/import-csv", requireAuth, (req, res) => {
   });
 });
 
-app.post("/api/vehicles", requireAuth, (req, res) => {
+app.post("/api/vehicles", requireAuth, requireRoles("owner", "admin", "agent"), (req, res) => {
   const { errors, normalizedVehicle } = normalizeVehicleInput(req.body);
   if (errors.length > 0) {
     return res.status(400).json({ error: errors[0], details: errors });
@@ -995,7 +996,7 @@ app.get("/api/vehicles/:vehicleId", requireAuth, (req, res) => {
   });
 });
 
-app.patch("/api/vehicles/:vehicleId", requireAuth, (req, res) => {
+app.patch("/api/vehicles/:vehicleId", requireAuth, requireRoles("owner", "admin", "agent"), (req, res) => {
   const store = req.store;
   const vehicle = store.vehicles.find(
     (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
@@ -1046,7 +1047,11 @@ app.patch("/api/vehicles/:vehicleId", requireAuth, (req, res) => {
   return res.json(vehicle);
 });
 
-app.patch("/api/vehicles/:vehicleId/status", requireAuth, (req, res) => {
+app.patch(
+  "/api/vehicles/:vehicleId/status",
+  requireAuth,
+  requireRoles("owner", "admin", "agent"),
+  (req, res) => {
   const status = normalizeVehicleStatus(req.body.status);
   if (!status) {
     return sendValidationError(res, "Invalid vehicle status.");
@@ -1064,7 +1069,8 @@ app.patch("/api/vehicles/:vehicleId/status", requireAuth, (req, res) => {
   vehicle.updatedAt = nowIso();
   writeStore(store);
   return res.json(vehicle);
-});
+  }
+);
 
 app.get("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
   const store = req.store;
@@ -1081,7 +1087,7 @@ app.get("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
   return res.json(documents);
 });
 
-app.post("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
+app.post("/api/vehicles/:vehicleId/documents", requireAuth, requireRoles("owner", "admin", "agent"), (req, res) => {
   uploadVehicleDocument.single("document")(req, res, (uploadError) => {
     if (uploadError) {
       const message =
@@ -1137,7 +1143,11 @@ app.post("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
   });
 });
 
-app.delete("/api/vehicles/:vehicleId/documents/:documentId", requireAuth, (req, res) => {
+app.delete(
+  "/api/vehicles/:vehicleId/documents/:documentId",
+  requireAuth,
+  requireRoles("owner", "admin", "agent"),
+  (req, res) => {
   const store = req.store;
   const documentIndex = store.vehicleDocuments.findIndex(
     (item) =>
@@ -1158,7 +1168,8 @@ app.delete("/api/vehicles/:vehicleId/documents/:documentId", requireAuth, (req, 
   }
 
   return res.json({ success: true });
-});
+  }
+);
 
 app.get("/api/work-orders", requireAuth, (req, res) => {
   const store = req.store;
@@ -1195,7 +1206,11 @@ app.get("/api/vehicles/:vehicleId/work-orders", requireAuth, (req, res) => {
   return res.json(workOrders);
 });
 
-app.post("/api/vehicles/:vehicleId/work-orders", requireAuth, (req, res) => {
+app.post(
+  "/api/vehicles/:vehicleId/work-orders",
+  requireAuth,
+  requireRoles("owner", "admin", "agent"),
+  (req, res) => {
   const store = req.store;
   const vehicle = store.vehicles.find(
     (item) => item.id === req.params.vehicleId && item.tenantId === req.tenantId
@@ -1222,9 +1237,10 @@ app.post("/api/vehicles/:vehicleId/work-orders", requireAuth, (req, res) => {
   store.workOrders.push(workOrder);
   writeStore(store);
   return res.status(201).json(workOrder);
-});
+  }
+);
 
-app.patch("/api/work-orders/:workOrderId", requireAuth, (req, res) => {
+app.patch("/api/work-orders/:workOrderId", requireAuth, requireRoles("owner", "admin", "agent"), (req, res) => {
   const store = req.store;
   const workOrder = store.workOrders.find(
     (item) => item.id === req.params.workOrderId && item.tenantId === req.tenantId

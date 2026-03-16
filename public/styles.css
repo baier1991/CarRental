@@ -146,6 +146,28 @@ header.page-header {
   padding: 1.6rem 0 0.8rem;
 }
 
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.button-link {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 8px;
+  border: 1px solid #1d4ed8;
+  background: #1d4ed8;
+  color: #ffffff;
+  padding: 0.55rem 0.75rem;
+  font-weight: 600;
+}
+
+.button-link:hover {
+  background: #1e40af;
+}
+
 h1,
 h2,
 h3 {
@@ -426,6 +448,11 @@ small {
   .grid-2,
   .grid-3 {
     grid-template-columns: 1fr;
+  }
+
+  .page-actions {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

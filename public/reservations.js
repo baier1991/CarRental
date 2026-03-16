@@ -196,6 +196,7 @@ function attachHandlers() {
       await loadReservationData();
     } catch (error) {
       if (inlineCustomerCreated) {
+        await loadReservationData();
         showToast(
           `${error.message} New customer was created and is now available in the customer list.`,
           true

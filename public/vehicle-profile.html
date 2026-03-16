@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Rental OS - Vehicle Profile</title>
+    <link rel="stylesheet" href="/styles.css?v=20260321" />
+  </head>
+  <body data-page="fleet">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/">Car Rental OS</a>
+        <p class="sidebar-subtitle">Rental operations platform</p>
+        <button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-expanded="false" aria-controls="sidebar-menu">
+          Menu
+        </button>
+        <div id="session-summary" class="sidebar-session"></div>
+        <button type="button" id="logout-btn" class="logout-btn">Logout</button>
+        <nav id="sidebar-menu" class="sidebar-menu">
+          <a href="/" data-page="home">Home</a>
+          <a href="/fleet.html" data-page="fleet">Fleet</a>
+          <a href="/customers.html" data-page="customers">Customers</a>
+          <a href="/users.html" data-page="users">Users</a>
+          <a href="/reservations.html" data-page="reservations">Reservations</a>
+          <a href="/maintenance.html" data-page="maintenance">Maintenance</a>
+        </nav>
+      </aside>
+
+      <div class="app-main">
+        <header class="container page-header">
+          <div class="page-actions">
+            <div>
+              <h1>Vehicle Profile</h1>
+              <p class="subtitle">See details, edit vehicle settings, and manage maintenance records.</p>
+            </div>
+            <a href="/fleet.html" class="button-link">Back to Fleet</a>
+          </div>
+        </header>
+
+        <main class="container">
+          <section class="card">
+            <label>
+              Select Vehicle
+              <select id="profile-vehicle-select"></select>
+            </label>
+            <div id="profile-permission-note" class="soft-box hidden"></div>
+            <div id="vehicle-profile-summary" class="soft-box"></div>
+          </section>
+
+          <section class="card">
+            <h2>Edit Vehicle</h2>
+            <form id="edit-vehicle-form" class="stack">
+              <div class="grid-2">
+                <label>Daily Rate <input type="number" name="dailyRate" step="0.01" /></label>
+                <label>Weekend Daily Rate <input type="number" name="weekendDailyRate" step="0.01" /></label>
+              </div>
+              <div class="grid-2">
+                <label>Weekly Rate <input type="number" name="weeklyRate" step="0.01" /></label>
+                <label>Monthly Rate <input type="number" name="monthlyRate" step="0.01" /></label>
+              </div>
+              <div class="grid-2">
+                <label>
+                  Status
+                  <select name="status">
+                    <option value="available">available</option>
+                    <option value="maintenance">maintenance</option>
+                    <option value="cleaning">cleaning</option>
+                    <option value="inactive">inactive</option>
+                  </select>
+                </label>
+                <label>Branch Code <input name="branchCode" /></label>
+              </div>
+              <div class="grid-2">
+                <label>Location <input name="location" /></label>
+                <label>Odometer (km) <input type="number" name="odometerKm" min="0" step="1" /></label>
+              </div>
+              <div class="grid-2">
+                <label>Registration Expiry <input type="date" name="registrationExpiryDate" /></label>
+                <label>Insurance Expiry <input type="date" name="insuranceExpiryDate" /></label>
+              </div>
+              <div class="grid-2">
+                <label>Inspection Due <input type="date" name="inspectionDueDate" /></label>
+                <label>Next Service Date <input type="date" name="nextServiceDate" /></label>
+              </div>
+              <div class="grid-2">
+                <label>Next Service at KM <input type="number" name="nextServiceAtKm" min="0" step="1" /></label>
+                <label>Security Deposit <input type="number" name="securityDeposit" min="0" step="0.01" /></label>
+              </div>
+              <fieldset>
+                <legend>Vehicle Features</legend>
+                <label><input type="checkbox" name="editFeatures" value="bluetooth" /> Bluetooth</label>
+                <label><input type="checkbox" name="editFeatures" value="appleCarPlay" /> Apple CarPlay</label>
+                <label><input type="checkbox" name="editFeatures" value="androidAuto" /> Android Auto</label>
+                <label><input type="checkbox" name="editFeatures" value="backupCamera" /> Backup Camera</label>
+                <label><input type="checkbox" name="editFeatures" value="cruiseControl" /> Cruise Control</label>
+                <label><input type="checkbox" name="editFeatures" value="leatherSeats" /> Leather Seats</label>
+                <label><input type="checkbox" name="editFeatures" value="sunroof" /> Sunroof</label>
+                <label><input type="checkbox" name="editFeatures" value="parkingSensors" /> Parking Sensors</label>
+                <label><input type="checkbox" name="editFeatures" value="tollTag" /> Toll Tag</label>
+              </fieldset>
+              <label>Notes <textarea name="notes" rows="2"></textarea></label>
+              <button type="submit">Save Vehicle Changes</button>
+            </form>
+          </section>
+
+          <section class="grid-2">
+            <article class="card">
+              <h2>Documents</h2>
+              <form id="profile-document-form" class="stack">
+                <div class="grid-2">
+                  <label>
+                    Document Type
+                    <select name="documentType">
+                      <option value="registration">registration</option>
+                      <option value="insurance">insurance</option>
+                      <option value="inspection">inspection</option>
+                      <option value="contract">contract</option>
+                      <option value="other">other</option>
+                    </select>
+                  </label>
+                  <label>Expiry Date <input type="date" name="expiryDate" /></label>
+                </div>
+                <label>Document File (PDF/JPG/PNG/WEBP, max 10MB) <input type="file" name="document" required /></label>
+                <label>Notes <textarea name="notes" rows="2"></textarea></label>
+                <button type="submit">Upload Document</button>
+              </form>
+              <div id="profile-document-list" class="table-wrap"></div>
+              <div id="profile-document-pagination" class="pagination-wrap hidden"></div>
+            </article>
+
+            <article class="card">
+              <h2>Work Orders</h2>
+              <form id="profile-work-order-form" class="stack">
+                <div class="grid-2">
+                  <label>Title <input name="title" required /></label>
+                  <label>Scheduled Date <input type="date" name="scheduledDate" /></label>
+                </div>
+                <div class="grid-2">
+                  <label>
+                    Priority
+                    <select name="priority">
+                      <option value="low">low</option>
+                      <option value="medium">medium</option>
+                      <option value="high">high</option>
+                      <option value="critical">critical</option>
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select name="status">
+                      <option value="open">open</option>
+                      <option value="in_progress">in_progress</option>
+                      <option value="on_hold">on_hold</option>
+                      <option value="completed">completed</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="grid-2">
+                  <label>Cost Estimate <input type="number" name="costEstimate" min="0" step="0.01" /></label>
+                  <label>Vendor Name <input name="vendorName" /></label>
+                </div>
+                <label>Description <textarea name="description" rows="2"></textarea></label>
+                <label>Notes <textarea name="notes" rows="2"></textarea></label>
+                <button type="submit">Create Work Order</button>
+              </form>
+              <div id="profile-work-order-list" class="table-wrap"></div>
+              <div id="profile-work-order-pagination" class="pagination-wrap hidden"></div>
+            </article>
+          </section>
+
+          <div id="toast" class="toast hidden" aria-live="polite"></div>
+        </main>
+      </div>
+    </div>
+
+    <script src="/common.js?v=20260321"></script>
+    <script src="/vehicle-profile.js?v=20260321"></script>
+  </body>
+</html>
