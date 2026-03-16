@@ -799,7 +799,204 @@
     });
   }
 
+  function isVehicleProfilePath() {
+    var path = window.location.pathname || "";
+    return path.endsWith("/vehicle-profile.html");
+  }
+
+  function renderVehicleProfileFallback(vehicles, profile) {
+    var select = document.getElementById("profile-vehicle-select");
+    var summary = document.getElementById("vehicle-profile-summary");
+    var documentList = document.getElementById("profile-document-list");
+    var workOrderList = document.getElementById("profile-work-order-list");
+
+    var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+    if (select && select.options.length === 0) {
+      if (safeVehicles.length === 0) {
+        select.innerHTML = '<option value="">No vehicles available</option>';
+      } else {
+        var options = [];
+        for (var i = 0; i < safeVehicles.length; i += 1) {
+          options.push(
+            '<option value="' +
+              escapeHtml(safeVehicles[i].id || "") +
+              '">' +
+              escapeHtml(
+                (safeVehicles[i].plateNumber || "") + " - " + (safeVehicles[i].make || "") + " " + (safeVehicles[i].model || "")
+              ) +
+              "</option>"
+          );
+        }
+        select.innerHTML = options.join("");
+      }
+    }
+
+    if (!profile || typeof profile !== "object") {
+      if (summary && isElementEffectivelyEmpty(summary)) {
+        summary.innerHTML = "<p>Select a vehicle to see profile details.</p>";
+      }
+      return;
+    }
+
+    if (summary && isElementEffectivelyEmpty(summary)) {
+      var alerts = Array.isArray(profile.alerts) ? profile.alerts : [];
+      var alertsHtml =
+        alerts.length > 0
+          ? "<ul>" +
+            alerts
+              .map(function (alert) {
+                return "<li><strong>" + escapeHtml(alert.type || "info") + ":</strong> " + escapeHtml(alert.message || "") + "</li>";
+              })
+              .join("") +
+            "</ul>"
+          : "<p>No alerts for this vehicle.</p>";
+
+      summary.innerHTML =
+        '<div class="grid-2"><div><strong>' +
+        escapeHtml((profile.year || "") + " " + (profile.make || "") + " " + (profile.model || "")) +
+        "</strong><br />Plate: " +
+        escapeHtml(profile.plateNumber || "") +
+        '<br />Status: <span class="badge">' +
+        escapeHtml(profile.status || "n/a") +
+        "</span><br />Category: " +
+        escapeHtml(profile.category || "n/a") +
+        "</div><div>Daily: " +
+        escapeHtml(formatMoney(profile.dailyRate || 0)) +
+        "<br />Weekend: " +
+        escapeHtml(profile.weekendDailyRate ? formatMoney(profile.weekendDailyRate) : "n/a") +
+        "<br />Location: " +
+        escapeHtml(profile.location || "n/a") +
+        "<br />Branch: " +
+        escapeHtml(profile.branchCode || "n/a") +
+        "</div></div><hr /><strong>Alerts</strong>" +
+        alertsHtml;
+    }
+
+    if (documentList && isElementEffectivelyEmpty(documentList)) {
+      var documents = Array.isArray(profile.documents) ? profile.documents : [];
+      if (documents.length === 0) {
+        documentList.innerHTML = "<p>No documents uploaded for this vehicle.</p>";
+      } else {
+        var documentRows = [];
+        for (var j = 0; j < documents.length; j += 1) {
+          var documentItem = documents[j] || {};
+          documentRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(documentItem.documentType || "") +
+              "</td>" +
+              '<td><a href="' +
+              escapeHtml(documentItem.relativePath || "#") +
+              '" target="_blank" rel="noreferrer">' +
+              escapeHtml(documentItem.originalName || "") +
+              "</a></td>" +
+              "<td>" +
+              escapeHtml(documentItem.uploadedAt ? String(documentItem.uploadedAt).slice(0, 10) : "n/a") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(documentItem.expiryDate || "n/a") +
+              "</td>" +
+              "</tr>"
+          );
+        }
+        documentList.innerHTML =
+          "<table><thead><tr><th>Type</th><th>File</th><th>Uploaded</th><th>Expiry</th></tr></thead><tbody>" +
+          documentRows.join("") +
+          "</tbody></table>";
+      }
+    }
+
+    if (workOrderList && isElementEffectivelyEmpty(workOrderList)) {
+      var workOrders = Array.isArray(profile.workOrders) ? profile.workOrders : [];
+      if (workOrders.length === 0) {
+        workOrderList.innerHTML = "<p>No work orders for this vehicle yet.</p>";
+      } else {
+        var workOrderRows = [];
+        for (var k = 0; k < workOrders.length; k += 1) {
+          var workOrder = workOrders[k] || {};
+          workOrderRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(workOrder.title || "") +
+              "</td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(workOrder.priority || "n/a") +
+              "</span></td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(workOrder.status || "n/a") +
+              "</span></td>" +
+              "<td>" +
+              escapeHtml(workOrder.scheduledDate || "n/a") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(
+                workOrder.actualCost ? formatMoney(workOrder.actualCost) : workOrder.costEstimate ? "Est: " + formatMoney(workOrder.costEstimate) : "n/a"
+              ) +
+              "</td>" +
+              "</tr>"
+          );
+        }
+        workOrderList.innerHTML =
+          "<table><thead><tr><th>Title</th><th>Priority</th><th>Status</th><th>Scheduled</th><th>Cost</th></tr></thead><tbody>" +
+          workOrderRows.join("") +
+          "</tbody></table>";
+      }
+    }
+  }
+
+  function runVehicleProfileFallback() {
+    requestJson("/api/vehicles", function (vehiclesError, vehicles) {
+      if (vehiclesError) {
+        return;
+      }
+      var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+      var select = document.getElementById("profile-vehicle-select");
+      var url = new URL(window.location.href);
+      var queryVehicleId = String(url.searchParams.get("vehicleId") || "");
+      var selectedVehicleId = queryVehicleId;
+      if (!selectedVehicleId || !safeVehicles.some(function (vehicle) { return vehicle.id === selectedVehicleId; })) {
+        selectedVehicleId = safeVehicles[0] ? safeVehicles[0].id : "";
+      }
+
+      renderVehicleProfileFallback(safeVehicles, null);
+      if (select && selectedVehicleId) {
+        select.value = selectedVehicleId;
+      }
+      if (!selectedVehicleId) {
+        return;
+      }
+
+      var loadProfileFor = function (vehicleId) {
+        requestJson("/api/vehicles/" + encodeURIComponent(vehicleId), function (_profileError, profile) {
+          renderVehicleProfileFallback(safeVehicles, profile || null);
+        });
+      };
+
+      if (select && select.dataset.handlerBound !== "true" && select.dataset.fallbackBound !== "true") {
+        select.dataset.fallbackBound = "true";
+        select.addEventListener("change", function () {
+          var nextVehicleId = select.value;
+          var nextUrl = new URL(window.location.href);
+          if (nextVehicleId) {
+            nextUrl.searchParams.set("vehicleId", nextVehicleId);
+          } else {
+            nextUrl.searchParams.delete("vehicleId");
+          }
+          window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search);
+          loadProfileFor(nextVehicleId);
+        });
+      }
+
+      loadProfileFor(selectedVehicleId);
+    });
+  }
+
   function bootFallback() {
+    if (isVehicleProfilePath()) {
+      runVehicleProfileFallback();
+      return;
+    }
+
     var page = (document.body && document.body.getAttribute("data-page")) || "";
     if (page === "home") {
       runHomePageFallback();

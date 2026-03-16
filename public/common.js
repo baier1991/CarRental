@@ -127,7 +127,11 @@ function getCurrentPageKey() {
   }
 
   const fileName = pathName.split("/").pop() || "";
-  return fileName.replace(".html", "") || "home";
+  const pageKey = fileName.replace(".html", "") || "home";
+  if (pageKey === "vehicle-profile") {
+    return "fleet";
+  }
+  return pageKey;
 }
 
 function markPageStatus(status, pageKey = getCurrentPageKey()) {
