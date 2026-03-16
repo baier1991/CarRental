@@ -362,7 +362,7 @@
     var normalizedVehicles = normalizeFleetVehicles(vehicles);
     var filterForm = document.getElementById("fleet-filter-form");
     var resetButton = document.getElementById("fleet-filter-reset-btn");
-    if (!filterForm || filterForm.dataset.handlerBound === "true" || filterForm.dataset.fallbackBound === "true") {
+    if (!filterForm || filterForm.dataset.fallbackBound === "true") {
       return;
     }
 
