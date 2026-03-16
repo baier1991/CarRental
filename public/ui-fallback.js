@@ -165,10 +165,11 @@
   }
 
   function filterFleetVehicles(normalizedVehicles, filters) {
-    var minRate = Number(filters.minRate);
-    var maxRate = Number(filters.maxRate);
-    var hasMinRate = isFinite(minRate) && minRate >= 0;
-    var hasMaxRate = isFinite(maxRate) && maxRate >= 0;
+    var effectiveRateFilters = getFleetEffectiveRateFilters(normalizedVehicles, filters);
+    var minRate = effectiveRateFilters.minRate;
+    var maxRate = effectiveRateFilters.maxRate;
+    var hasMinRate = effectiveRateFilters.hasMinRate;
+    var hasMaxRate = effectiveRateFilters.hasMaxRate;
     var filtered = normalizedVehicles.filter(function (item) {
       var vehicle = item.original || {};
       if (filters.status && String(vehicle.status || "").toLowerCase() !== filters.status) {
@@ -192,6 +193,49 @@
       return true;
     });
     return sortFleetVehicles(filtered, filters.sort);
+  }
+
+  function getFleetRateBounds(normalizedVehicles) {
+    if (!normalizedVehicles || normalizedVehicles.length === 0) {
+      return { min: 0, max: 0 };
+    }
+    var min = Number.POSITIVE_INFINITY;
+    var max = Number.NEGATIVE_INFINITY;
+    for (var i = 0; i < normalizedVehicles.length; i += 1) {
+      var rate = Number(normalizedVehicles[i] && normalizedVehicles[i].dailyRate);
+      if (!isFinite(rate)) {
+        continue;
+      }
+      if (rate < min) {
+        min = rate;
+      }
+      if (rate > max) {
+        max = rate;
+      }
+    }
+    if (!isFinite(min) || !isFinite(max)) {
+      return { min: 0, max: 0 };
+    }
+    return { min: min, max: max };
+  }
+
+  function getFleetEffectiveRateFilters(normalizedVehicles, filters) {
+    var minRaw = String(filters && filters.minRate || "").trim();
+    var maxRaw = String(filters && filters.maxRate || "").trim();
+    var minRate = Number(minRaw);
+    var maxRate = Number(maxRaw);
+    var hasMinInput = minRaw.length > 0 && isFinite(minRate) && minRate >= 0;
+    var hasMaxInput = maxRaw.length > 0 && isFinite(maxRate) && maxRate >= 0;
+    if (!normalizedVehicles || normalizedVehicles.length === 0) {
+      return { minRate: minRate, maxRate: maxRate, hasMinRate: hasMinInput, hasMaxRate: hasMaxInput };
+    }
+    var bounds = getFleetRateBounds(normalizedVehicles);
+    return {
+      minRate: minRate,
+      maxRate: maxRate,
+      hasMinRate: hasMinInput && minRate > bounds.min,
+      hasMaxRate: hasMaxInput && maxRate < bounds.max,
+    };
   }
 
   function renderFleetList(filteredItems) {
@@ -281,8 +325,8 @@
     if (filters.status) activeCount += 1;
     if (filters.category) activeCount += 1;
     if (filters.branch) activeCount += 1;
-    if (filters.minRate) activeCount += 1;
-    if (filters.maxRate) activeCount += 1;
+    if (filters._hasMinRate) activeCount += 1;
+    if (filters._hasMaxRate) activeCount += 1;
     summary.textContent =
       activeCount > 0
         ? "Showing " + visibleCount + " of " + totalCount + " vehicles (" + activeCount + " active filters)"
@@ -312,8 +356,8 @@
     if (filters.status) pills.push({ key: "status", label: "Status: " + filters.status });
     if (filters.category) pills.push({ key: "category", label: "Category: " + filters.category });
     if (filters.branch) pills.push({ key: "branch", label: "Branch: " + filters.branch });
-    if (filters.minRate) pills.push({ key: "minRate", label: "Min rate: " + formatMoney(filters.minRate) });
-    if (filters.maxRate) pills.push({ key: "maxRate", label: "Max rate: " + formatMoney(filters.maxRate) });
+    if (filters._hasMinRate) pills.push({ key: "minRate", label: "Min rate: " + formatMoney(filters.minRate) });
+    if (filters._hasMaxRate) pills.push({ key: "maxRate", label: "Max rate: " + formatMoney(filters.maxRate) });
 
     if (!pills.length) {
       container.classList.add("hidden");
@@ -377,6 +421,9 @@
   function renderFleetFallback(vehicles) {
     var normalizedVehicles = normalizeFleetVehicles(vehicles);
     var filters = getFleetFiltersFromForm();
+    var rateFilters = getFleetEffectiveRateFilters(normalizedVehicles, filters);
+    filters._hasMinRate = rateFilters.hasMinRate;
+    filters._hasMaxRate = rateFilters.hasMaxRate;
     var filtered = filterFleetVehicles(normalizedVehicles, filters);
     renderFleetMetrics(filtered);
     renderFleetList(filtered);
@@ -474,6 +521,9 @@
     var searchTimer = null;
     var apply = function () {
       var filters = getFleetFiltersFromForm();
+      var rateFilters = getFleetEffectiveRateFilters(normalizedVehicles, filters);
+      filters._hasMinRate = rateFilters.hasMinRate;
+      filters._hasMaxRate = rateFilters.hasMaxRate;
       var filtered = filterFleetVehicles(normalizedVehicles, filters);
       renderFleetMetrics(filtered);
       renderFleetList(filtered);

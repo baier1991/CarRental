@@ -74,6 +74,46 @@ function normalizeRateFilterValue(rawValue) {
   return String(parsed);
 }
 
+function getDailyRateBounds() {
+  if (!state.allVehicles.length) {
+    return { min: 0, max: 0 };
+  }
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  state.allVehicles.forEach((vehicle) => {
+    const rate = Number(vehicle?._dailyRate);
+    if (!Number.isFinite(rate)) {
+      return;
+    }
+    if (rate < min) {
+      min = rate;
+    }
+    if (rate > max) {
+      max = rate;
+    }
+  });
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return { min: 0, max: 0 };
+  }
+  return { min, max };
+}
+
+function getEffectiveRateFilters() {
+  const minRateRaw = String(state.filters.minRate || "").trim();
+  const maxRateRaw = String(state.filters.maxRate || "").trim();
+  const minRate = Number(minRateRaw);
+  const maxRate = Number(maxRateRaw);
+  const hasMinInput = minRateRaw.length > 0 && Number.isFinite(minRate) && minRate >= 0;
+  const hasMaxInput = maxRateRaw.length > 0 && Number.isFinite(maxRate) && maxRate >= 0;
+  if (!state.allVehicles.length) {
+    return { minRate, maxRate, hasMinRate: hasMinInput, hasMaxRate: hasMaxInput };
+  }
+  const bounds = getDailyRateBounds();
+  const hasMinRate = hasMinInput && minRate > bounds.min;
+  const hasMaxRate = hasMaxInput && maxRate < bounds.max;
+  return { minRate, maxRate, hasMinRate, hasMaxRate };
+}
+
 function sortVehicles(items, sortBy) {
   const sorted = [...items];
   switch (sortBy) {
@@ -101,10 +141,7 @@ function getFilteredVehicles() {
   const status = String(state.filters.status || "").trim().toLowerCase();
   const category = String(state.filters.category || "").trim().toLowerCase();
   const branch = String(state.filters.branch || "").trim().toUpperCase();
-  const minRate = Number(state.filters.minRate);
-  const maxRate = Number(state.filters.maxRate);
-  const hasMinRate = Number.isFinite(minRate) && minRate >= 0;
-  const hasMaxRate = Number.isFinite(maxRate) && maxRate >= 0;
+  const { minRate, maxRate, hasMinRate, hasMaxRate } = getEffectiveRateFilters();
   const filtered = state.allVehicles.filter((vehicle) => {
     if (status && String(vehicle.status || "").toLowerCase() !== status) {
       return false;
@@ -274,10 +311,11 @@ function renderFilterSummary() {
   }
   const total = state.allVehicles.length;
   const visible = state.filteredVehicles.length;
-  const activeFilterCount = ["search", "status", "category", "branch", "minRate", "maxRate"].reduce(
+  const rateFilters = getEffectiveRateFilters();
+  const activeFilterCount = ["search", "status", "category", "branch"].reduce(
     (count, key) => count + (String(state.filters[key] || "").trim() ? 1 : 0),
     0
-  );
+  ) + (rateFilters.hasMinRate ? 1 : 0) + (rateFilters.hasMaxRate ? 1 : 0);
   summary.textContent =
     activeFilterCount > 0
       ? `Showing ${visible} of ${total} vehicles (${activeFilterCount} active filters)`
@@ -314,10 +352,11 @@ function renderActiveFilterPills() {
   if (state.filters.branch) {
     pills.push({ key: "branch", label: `Branch: ${state.filters.branch}` });
   }
-  if (state.filters.minRate) {
+  const rateFilters = getEffectiveRateFilters();
+  if (rateFilters.hasMinRate) {
     pills.push({ key: "minRate", label: `Min rate: ${formatMoney(state.filters.minRate)}` });
   }
-  if (state.filters.maxRate) {
+  if (rateFilters.hasMaxRate) {
     pills.push({ key: "maxRate", label: `Max rate: ${formatMoney(state.filters.maxRate)}` });
   }
 
