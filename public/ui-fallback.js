@@ -492,6 +492,12 @@
         };
 
         var shouldCreateInline = formData.get("createCustomerInline") === "on";
+        var reservationConfirmMessage = shouldCreateInline
+          ? "Create a new customer and reservation?"
+          : "Create this reservation?";
+        if (typeof window.confirm === "function" && !window.confirm(reservationConfirmMessage)) {
+          return;
+        }
         var postReservation = function () {
           var xhr = new XMLHttpRequest();
           xhr.open("POST", "/api/reservations", true);
@@ -612,6 +618,9 @@
           discountCode: formData.get("discountCode"),
           addOns: formData.getAll("addOns"),
         };
+        if (typeof window.confirm === "function" && !window.confirm("Calculate this quote?")) {
+          return;
+        }
         var quoteXhr = new XMLHttpRequest();
         quoteXhr.open("POST", "/api/quotes", true);
         quoteXhr.withCredentials = true;

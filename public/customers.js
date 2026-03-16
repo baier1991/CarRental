@@ -1,4 +1,4 @@
-const { request, showToast, sessionReady, markPageReady, paginateItems, renderPaginationControls } =
+const { request, showToast, confirmAction, sessionReady, markPageReady, paginateItems, renderPaginationControls } =
   window.AppCommon;
 
 const state = {
@@ -119,6 +119,9 @@ function attachHandlers() {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(form).entries());
+    if (!confirmAction(`Create customer ${payload.firstName || ""} ${payload.lastName || ""}?`)) {
+      return;
+    }
     try {
       await request("/api/customers", {
         method: "POST",

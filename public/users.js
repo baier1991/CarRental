@@ -1,4 +1,5 @@
-const { request, showToast, sessionReady, markPageReady, paginateItems, renderPaginationControls } = window.AppCommon;
+const { request, showToast, confirmAction, sessionReady, markPageReady, paginateItems, renderPaginationControls } =
+  window.AppCommon;
 
 const state = {
   users: [],
@@ -104,6 +105,9 @@ function attachHandlers() {
       const formData = new FormData(userForm);
       const payload = Object.fromEntries(formData.entries());
       payload.isActive = formData.get("isActive") === "on";
+      if (!confirmAction(`Create user ${payload.email || ""}?`)) {
+        return;
+      }
 
       try {
         await request("/api/users", {
@@ -125,6 +129,9 @@ function attachHandlers() {
       event.preventDefault();
       const payload = Object.fromEntries(new FormData(passwordForm).entries());
       const userId = payload.userId;
+      if (!confirmAction("Update this user's password?")) {
+        return;
+      }
 
       try {
         await request(`/api/users/${userId}/password`, {
@@ -156,6 +163,9 @@ function attachHandlers() {
       const roleSelect = userList.querySelector(`select[data-role-user-id="${userId}"]`);
       const activeCheckbox = userList.querySelector(`input[data-active-user-id="${userId}"]`);
       if (!(roleSelect instanceof HTMLSelectElement) || !(activeCheckbox instanceof HTMLInputElement)) {
+        return;
+      }
+      if (!confirmAction("Save user role/status changes?")) {
         return;
       }
 

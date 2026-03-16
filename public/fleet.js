@@ -1,6 +1,7 @@
 const {
   request,
   showToast,
+  confirmAction,
   collectCheckedValues,
   formatMoney,
   sessionReady,
@@ -274,6 +275,10 @@ function attachHandlers() {
 
       const payload = Object.fromEntries(new FormData(addForm).entries());
       payload.features = collectCheckedValues(addForm, "features");
+
+      if (!confirmAction(`Create vehicle ${payload.plateNumber || ""}?`)) {
+        return;
+      }
 
       try {
         await request("/api/vehicles", {

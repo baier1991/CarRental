@@ -1,4 +1,14 @@
-const { request, showToast, vehicleLabel, formatMoney, sessionReady, markPageReady, paginateItems, renderPaginationControls } =
+const {
+  request,
+  showToast,
+  confirmAction,
+  vehicleLabel,
+  formatMoney,
+  sessionReady,
+  markPageReady,
+  paginateItems,
+  renderPaginationControls,
+} =
   window.AppCommon;
 
 const state = {
@@ -234,6 +244,9 @@ function attachHandlers() {
       event.preventDefault();
       const formData = new FormData(documentForm);
       const vehicleId = formData.get("vehicleId");
+      if (!confirmAction("Upload this document?")) {
+        return;
+      }
       try {
         await request(`/api/vehicles/${vehicleId}/documents`, {
           method: "POST",
@@ -268,6 +281,9 @@ function attachHandlers() {
       if (!documentId || !state.selectedVehicleId) {
         return;
       }
+      if (!confirmAction("Delete this document?")) {
+        return;
+      }
 
       try {
         await request(`/api/vehicles/${state.selectedVehicleId}/documents/${documentId}`, {
@@ -287,6 +303,9 @@ function attachHandlers() {
       const payload = Object.fromEntries(new FormData(workOrderForm).entries());
       const vehicleId = payload.vehicleId;
       delete payload.vehicleId;
+      if (!confirmAction("Create this work order?")) {
+        return;
+      }
       try {
         await request(`/api/vehicles/${vehicleId}/work-orders`, {
           method: "POST",
@@ -317,6 +336,9 @@ function attachHandlers() {
       }
       const select = workOrderList.querySelector(`select[data-work-order-status-id="${workOrderId}"]`);
       if (!(select instanceof HTMLSelectElement)) {
+        return;
+      }
+      if (!confirmAction("Save this work order status change?")) {
         return;
       }
 

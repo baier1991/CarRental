@@ -21,6 +21,14 @@ function showToast(message, isError = false) {
   }, 2800);
 }
 
+function confirmAction(message) {
+  const text = String(message || "").trim() || "Are you sure?";
+  if (typeof window.confirm !== "function") {
+    return true;
+  }
+  return window.confirm(text);
+}
+
 function appendNoCacheParam(url) {
   const separator = String(url).includes("?") ? "&" : "?";
   return `${url}${separator}_ts=${Date.now()}`;
@@ -292,6 +300,9 @@ async function initializeSession() {
     const logoutButton = document.getElementById("logout-btn");
     if (logoutButton) {
       logoutButton.addEventListener("click", async () => {
+        if (!confirmAction("Log out now?")) {
+          return;
+        }
         try {
           await request("/api/auth/logout", { method: "POST", suppressAuthRedirect: true });
         } catch (_error) {
@@ -315,6 +326,7 @@ const sessionReady = (async () => {
 
 window.AppCommon = {
   showToast,
+  confirmAction,
   request,
   formatMoney,
   collectCheckedValues,

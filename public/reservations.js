@@ -1,6 +1,7 @@
 const {
   request,
   showToast,
+  confirmAction,
   collectCheckedValues,
   formatMoney,
   vehicleLabel,
@@ -233,6 +234,13 @@ function attachHandlers() {
 
       let inlineCustomerCreated = null;
       try {
+        const reservationConfirmMessage = shouldCreateInlineCustomer
+          ? "Create a new customer and reservation?"
+          : "Create this reservation?";
+        if (!confirmAction(reservationConfirmMessage)) {
+          return;
+        }
+
         if (shouldCreateInlineCustomer) {
           const inlineFieldsMissing = Object.values(inlineCustomerPayload).some((value) => !value);
           if (inlineFieldsMissing) {
@@ -279,6 +287,10 @@ function attachHandlers() {
       event.preventDefault();
       const payload = Object.fromEntries(new FormData(quoteForm).entries());
       payload.addOns = collectCheckedValues(quoteForm, "addOns");
+
+      if (!confirmAction("Calculate this quote?")) {
+        return;
+      }
 
       try {
         const quote = await request("/api/quotes", {
