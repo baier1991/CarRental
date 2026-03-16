@@ -1128,6 +1128,43 @@ app.patch(
   }
 );
 
+app.get("/api/vehicle-documents", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicleIdFilter = req.query.vehicleId ? String(req.query.vehicleId).trim() : null;
+  const documentTypeRaw = req.query.documentType ? String(req.query.documentType).trim() : null;
+
+  let documentTypeFilter = null;
+  if (documentTypeRaw) {
+    documentTypeFilter = normalizeDocumentType(documentTypeRaw);
+    if (!documentTypeFilter) {
+      return sendValidationError(res, "Invalid documentType filter.");
+    }
+  }
+
+  if (vehicleIdFilter) {
+    const vehicle = store.vehicles.find(
+      (item) => item.id === vehicleIdFilter && item.tenantId === req.tenantId
+    );
+    if (!vehicle) {
+      return res.status(404).json({ error: "Vehicle not found." });
+    }
+  }
+
+  const documents = forTenant(store.vehicleDocuments, req.tenantId)
+    .filter((document) => {
+      if (vehicleIdFilter && document.vehicleId !== vehicleIdFilter) {
+        return false;
+      }
+      if (documentTypeFilter && document.documentType !== documentTypeFilter) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+  return res.json(documents);
+});
+
 app.get("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
   const store = req.store;
   const vehicle = store.vehicles.find(

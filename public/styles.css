@@ -369,6 +369,42 @@ small {
   background: #f1f5f9;
 }
 
+.badge.badge-success {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.badge.badge-warning {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.badge.badge-danger {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.badge.badge-muted {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.table-inline-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.table-inline-controls select,
+.table-inline-controls input {
+  min-width: 8.5rem;
+}
+
 .soft-box {
   margin-top: 0.75rem;
   padding: 0.75rem;
