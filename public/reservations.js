@@ -202,97 +202,108 @@ function attachHandlers() {
   const quoteForm = document.getElementById("quote-form");
   const quoteResult = document.getElementById("quote-result");
   const inlineToggle = document.getElementById("reservation-create-customer-inline");
-  if (!reservationForm || !quoteForm || !quoteResult) {
-    return;
+
+  if (reservationForm) {
+    setInlineCustomerMode(false);
+    reservationForm.dataset.handlerBound = "true";
+    if (inlineToggle instanceof HTMLInputElement) {
+      inlineToggle.addEventListener("change", () => {
+        setInlineCustomerMode(inlineToggle.checked);
+      });
+    }
   }
 
-  setInlineCustomerMode(false);
-  if (inlineToggle instanceof HTMLInputElement) {
-    inlineToggle.addEventListener("change", () => {
-      setInlineCustomerMode(inlineToggle.checked);
+  if (reservationForm) {
+    reservationForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(reservationForm);
+      const payload = Object.fromEntries(formData.entries());
+      payload.addOns = collectCheckedValues(reservationForm, "addOns");
+
+      const shouldCreateInlineCustomer = formData.get("createCustomerInline") === "on";
+      const inlineCustomerPayload = {
+        firstName: String(payload.inlineCustomerFirstName || "").trim(),
+        lastName: String(payload.inlineCustomerLastName || "").trim(),
+        email: String(payload.inlineCustomerEmail || "").trim(),
+        phone: String(payload.inlineCustomerPhone || "").trim(),
+        licenseNumber: String(payload.inlineCustomerLicenseNumber || "").trim(),
+      };
+      delete payload.createCustomerInline;
+      INLINE_CUSTOMER_FIELD_NAMES.forEach((fieldName) => delete payload[fieldName]);
+
+      let inlineCustomerCreated = null;
+      try {
+        if (shouldCreateInlineCustomer) {
+          const inlineFieldsMissing = Object.values(inlineCustomerPayload).some((value) => !value);
+          if (inlineFieldsMissing) {
+            throw new Error("Please complete all new customer fields.");
+          }
+          inlineCustomerCreated = await request("/api/customers", {
+            method: "POST",
+            body: JSON.stringify(inlineCustomerPayload),
+          });
+          payload.customerId = inlineCustomerCreated.id;
+        }
+
+        if (!payload.customerId || !payload.vehicleId) {
+          throw new Error("Please select both a customer and a vehicle.");
+        }
+
+        const reservation = await request("/api/reservations", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        showToast(`Reservation created (${formatMoney(reservation.pricing.total)}).`);
+        reservationForm.reset();
+        setInlineCustomerMode(false);
+        state.reservationPage = 1;
+        await loadReservationData();
+      } catch (error) {
+        if (inlineCustomerCreated) {
+          await loadReservationData();
+          showToast(
+            `${error.message} New customer was created and is now available in the customer list.`,
+            true
+          );
+        } else {
+          showToast(error.message, true);
+        }
+      }
     });
   }
 
-  reservationForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const formData = new FormData(reservationForm);
-    const payload = Object.fromEntries(formData.entries());
-    payload.addOns = collectCheckedValues(reservationForm, "addOns");
+  if (quoteForm) {
+    quoteForm.dataset.handlerBound = "true";
+    quoteForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(quoteForm).entries());
+      payload.addOns = collectCheckedValues(quoteForm, "addOns");
 
-    const shouldCreateInlineCustomer = formData.get("createCustomerInline") === "on";
-    const inlineCustomerPayload = {
-      firstName: String(payload.inlineCustomerFirstName || "").trim(),
-      lastName: String(payload.inlineCustomerLastName || "").trim(),
-      email: String(payload.inlineCustomerEmail || "").trim(),
-      phone: String(payload.inlineCustomerPhone || "").trim(),
-      licenseNumber: String(payload.inlineCustomerLicenseNumber || "").trim(),
-    };
-    delete payload.createCustomerInline;
-    INLINE_CUSTOMER_FIELD_NAMES.forEach((fieldName) => delete payload[fieldName]);
-
-    let inlineCustomerCreated = null;
-    try {
-      if (shouldCreateInlineCustomer) {
-        const inlineFieldsMissing = Object.values(inlineCustomerPayload).some((value) => !value);
-        if (inlineFieldsMissing) {
-          throw new Error("Please complete all new customer fields.");
-        }
-        inlineCustomerCreated = await request("/api/customers", {
+      try {
+        const quote = await request("/api/quotes", {
           method: "POST",
-          body: JSON.stringify(inlineCustomerPayload),
+          body: JSON.stringify(payload),
         });
-        payload.customerId = inlineCustomerCreated.id;
-      }
-      if (!payload.customerId || !payload.vehicleId) {
-        throw new Error("Please select both a customer and a vehicle.");
-      }
-
-      const reservation = await request("/api/reservations", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      showToast(`Reservation created (${formatMoney(reservation.pricing.total)}).`);
-      reservationForm.reset();
-      setInlineCustomerMode(false);
-      state.reservationPage = 1;
-      await loadReservationData();
-    } catch (error) {
-      if (inlineCustomerCreated) {
-        await loadReservationData();
-        showToast(
-          `${error.message} New customer was created and is now available in the customer list.`,
-          true
-        );
-      } else {
+        if (quoteResult) {
+          quoteResult.innerHTML = `
+            <strong>Total:</strong> ${formatMoney(quote.pricing.total)}<br />
+            Rental days: ${quote.rentalDays}<br />
+            Base: ${formatMoney(quote.pricing.basePrice)} |
+            Insurance: ${formatMoney(quote.pricing.insurancePrice)} |
+            Add-ons: ${formatMoney(quote.pricing.addOnPrice)}<br />
+            Tax: ${formatMoney(quote.pricing.tax)}
+          `;
+        }
+        showToast("Quote calculated.");
+      } catch (error) {
         showToast(error.message, true);
+        if (quoteResult) {
+          quoteResult.innerHTML = "<em>Could not calculate quote.</em>";
+        }
       }
-    }
-  });
-
-  quoteForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const payload = Object.fromEntries(new FormData(quoteForm).entries());
-    payload.addOns = collectCheckedValues(quoteForm, "addOns");
-
-    try {
-      const quote = await request("/api/quotes", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      quoteResult.innerHTML = `
-        <strong>Total:</strong> ${formatMoney(quote.pricing.total)}<br />
-        Rental days: ${quote.rentalDays}<br />
-        Base: ${formatMoney(quote.pricing.basePrice)} |
-        Insurance: ${formatMoney(quote.pricing.insurancePrice)} |
-        Add-ons: ${formatMoney(quote.pricing.addOnPrice)}<br />
-        Tax: ${formatMoney(quote.pricing.tax)}
-      `;
-      showToast("Quote calculated.");
-    } catch (error) {
-      showToast(error.message, true);
-      quoteResult.innerHTML = "<em>Could not calculate quote.</em>";
-    }
-  });
+    });
+  }
 }
 
 async function bootstrap() {

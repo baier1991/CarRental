@@ -469,6 +469,190 @@
       inlineToggle.addEventListener("change", applyInlineCustomerMode);
     }
 
+    var reservationForm = document.getElementById("reservation-form");
+    if (
+      reservationForm &&
+      reservationForm.dataset.handlerBound !== "true" &&
+      reservationForm.dataset.fallbackSubmitBound !== "true"
+    ) {
+      reservationForm.dataset.fallbackSubmitBound = "true";
+      reservationForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var formData = new FormData(reservationForm);
+        var payload = {
+          customerId: formData.get("customerId"),
+          vehicleId: formData.get("vehicleId"),
+          startDate: formData.get("startDate"),
+          endDate: formData.get("endDate"),
+          insuranceTier: formData.get("insuranceTier"),
+          status: formData.get("status"),
+          discountCode: formData.get("discountCode"),
+          notes: formData.get("notes"),
+          addOns: formData.getAll("addOns"),
+        };
+
+        var shouldCreateInline = formData.get("createCustomerInline") === "on";
+        var postReservation = function () {
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/reservations", true);
+          xhr.withCredentials = true;
+          xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+              return;
+            }
+            if (xhr.status >= 200 && xhr.status < 300) {
+              window.location.reload();
+              return;
+            }
+            var errorMessage = "Reservation create failed.";
+            try {
+              var errorData = JSON.parse(xhr.responseText || "{}");
+              if (errorData && errorData.error) {
+                errorMessage = errorData.error;
+              }
+            } catch (_e) {
+              // Ignore parse errors
+            }
+            if (window.AppCommon && typeof window.AppCommon.showToast === "function") {
+              window.AppCommon.showToast(errorMessage, true);
+            } else {
+              window.alert(errorMessage);
+            }
+          };
+          xhr.send(JSON.stringify(payload));
+        };
+
+        if (!shouldCreateInline) {
+          postReservation();
+          return;
+        }
+
+        var inlinePayload = {
+          firstName: formData.get("inlineCustomerFirstName"),
+          lastName: formData.get("inlineCustomerLastName"),
+          email: formData.get("inlineCustomerEmail"),
+          phone: formData.get("inlineCustomerPhone"),
+          licenseNumber: formData.get("inlineCustomerLicenseNumber"),
+        };
+
+        var inlineMissing = false;
+        for (var im in inlinePayload) {
+          if (!inlinePayload[im]) {
+            inlineMissing = true;
+            break;
+          }
+        }
+        if (inlineMissing) {
+          if (window.AppCommon && typeof window.AppCommon.showToast === "function") {
+            window.AppCommon.showToast("Please complete all new customer fields.", true);
+          } else {
+            window.alert("Please complete all new customer fields.");
+          }
+          return;
+        }
+
+        var customerXhr = new XMLHttpRequest();
+        customerXhr.open("POST", "/api/customers", true);
+        customerXhr.withCredentials = true;
+        customerXhr.setRequestHeader("Content-Type", "application/json");
+        customerXhr.onreadystatechange = function () {
+          if (customerXhr.readyState !== 4) {
+            return;
+          }
+          if (customerXhr.status >= 200 && customerXhr.status < 300) {
+            try {
+              var createdCustomer = JSON.parse(customerXhr.responseText || "{}");
+              payload.customerId = createdCustomer.id;
+              postReservation();
+            } catch (_err) {
+              if (window.AppCommon && typeof window.AppCommon.showToast === "function") {
+                window.AppCommon.showToast("New customer created but response parsing failed.", true);
+              } else {
+                window.alert("New customer created but response parsing failed.");
+              }
+            }
+            return;
+          }
+          var customerError = "Customer create failed.";
+          try {
+            var customerErrorData = JSON.parse(customerXhr.responseText || "{}");
+            if (customerErrorData && customerErrorData.error) {
+              customerError = customerErrorData.error;
+            }
+          } catch (_error) {
+            // Ignore parse errors
+          }
+          if (window.AppCommon && typeof window.AppCommon.showToast === "function") {
+            window.AppCommon.showToast(customerError, true);
+          } else {
+            window.alert(customerError);
+          }
+        };
+        customerXhr.send(JSON.stringify(inlinePayload));
+      });
+    }
+
+    var quoteForm = document.getElementById("quote-form");
+    if (
+      quoteForm &&
+      quoteForm.dataset.handlerBound !== "true" &&
+      quoteForm.dataset.fallbackSubmitBound !== "true"
+    ) {
+      quoteForm.dataset.fallbackSubmitBound = "true";
+      quoteForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var quoteResult = document.getElementById("quote-result");
+        var formData = new FormData(quoteForm);
+        var quotePayload = {
+          vehicleId: formData.get("vehicleId"),
+          startDate: formData.get("startDate"),
+          endDate: formData.get("endDate"),
+          insuranceTier: formData.get("insuranceTier"),
+          discountCode: formData.get("discountCode"),
+          addOns: formData.getAll("addOns"),
+        };
+        var quoteXhr = new XMLHttpRequest();
+        quoteXhr.open("POST", "/api/quotes", true);
+        quoteXhr.withCredentials = true;
+        quoteXhr.setRequestHeader("Content-Type", "application/json");
+        quoteXhr.onreadystatechange = function () {
+          if (quoteXhr.readyState !== 4) {
+            return;
+          }
+          if (quoteXhr.status >= 200 && quoteXhr.status < 300) {
+            try {
+              var quoteData = JSON.parse(quoteXhr.responseText || "{}");
+              if (quoteResult) {
+                quoteResult.innerHTML =
+                  "<strong>Total:</strong> " +
+                  escapeHtml(formatMoney(quoteData.pricing && quoteData.pricing.total)) +
+                  "<br />Rental days: " +
+                  escapeHtml(quoteData.rentalDays) +
+                  "<br />Base: " +
+                  escapeHtml(formatMoney(quoteData.pricing && quoteData.pricing.basePrice)) +
+                  " | Insurance: " +
+                  escapeHtml(formatMoney(quoteData.pricing && quoteData.pricing.insurancePrice)) +
+                  " | Add-ons: " +
+                  escapeHtml(formatMoney(quoteData.pricing && quoteData.pricing.addOnPrice)) +
+                  "<br />Tax: " +
+                  escapeHtml(formatMoney(quoteData.pricing && quoteData.pricing.tax));
+              }
+            } catch (_e) {
+              if (quoteResult) {
+                quoteResult.innerHTML = "<em>Could not calculate quote.</em>";
+              }
+            }
+            return;
+          }
+          if (quoteResult) {
+            quoteResult.innerHTML = "<em>Could not calculate quote.</em>";
+          }
+        };
+        quoteXhr.send(JSON.stringify(quotePayload));
+      });
+    }
+
     var listContainer = document.getElementById("reservation-list");
     if (listContainer && isElementEffectivelyEmpty(listContainer)) {
       if (safeReservations.length === 0) {
