@@ -179,18 +179,22 @@ function renderReservations() {
 }
 
 async function loadReservationData() {
-  const [vehicles, customers, reservations] = await Promise.all([
+  const results = await Promise.allSettled([
     request("/api/vehicles"),
     request("/api/customers"),
     request("/api/reservations"),
   ]);
-  state.vehicles = vehicles;
-  state.customers = customers;
-  state.reservations = reservations;
+  state.vehicles = results[0].status === "fulfilled" && Array.isArray(results[0].value) ? results[0].value : [];
+  state.customers = results[1].status === "fulfilled" && Array.isArray(results[1].value) ? results[1].value : [];
+  state.reservations = results[2].status === "fulfilled" && Array.isArray(results[2].value) ? results[2].value : [];
   state.reservationPage = 1;
   populateSelects();
   updateFormAvailability();
   renderReservations();
+
+  if (results.some((result) => result.status === "rejected")) {
+    showToast("Some reservation data could not load. Showing available data.", true);
+  }
 }
 
 function attachHandlers() {

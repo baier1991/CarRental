@@ -347,6 +347,191 @@
     });
   }
 
+  function renderReservationsFallback(customers, vehicles, reservations) {
+    var customerSelect = document.getElementById("reservation-customer");
+    var reservationVehicleSelect = document.getElementById("reservation-vehicle");
+    var quoteVehicleSelect = document.getElementById("quote-vehicle");
+    var inlineToggle = document.getElementById("reservation-create-customer-inline");
+    var inlineContainer = document.getElementById("reservation-inline-customer-fields");
+
+    var safeCustomers = Array.isArray(customers) ? customers : [];
+    var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+    var safeReservations = Array.isArray(reservations) ? reservations : [];
+
+    if (customerSelect && customerSelect.options.length === 0) {
+      if (safeCustomers.length === 0) {
+        customerSelect.innerHTML = '<option value="">No customers available</option>';
+      } else {
+        var customerOptions = [];
+        for (var i = 0; i < safeCustomers.length; i += 1) {
+          var customer = safeCustomers[i] || {};
+          customerOptions.push(
+            '<option value="' +
+              escapeHtml(customer.id || "") +
+              '">' +
+              escapeHtml((customer.firstName || "") + " " + (customer.lastName || "") + " (" + (customer.email || "") + ")") +
+              "</option>"
+          );
+        }
+        customerSelect.innerHTML = customerOptions.join("");
+      }
+    }
+
+    if (reservationVehicleSelect && reservationVehicleSelect.options.length === 0) {
+      if (safeVehicles.length === 0) {
+        reservationVehicleSelect.innerHTML = '<option value="">No vehicles available</option>';
+      } else {
+        var reservationVehicleOptions = [];
+        for (var j = 0; j < safeVehicles.length; j += 1) {
+          var rv = safeVehicles[j] || {};
+          reservationVehicleOptions.push(
+            '<option value="' +
+              escapeHtml(rv.id || "") +
+              '">' +
+              escapeHtml(
+                (rv.plateNumber || "") +
+                  " - " +
+                  (rv.make || "") +
+                  " " +
+                  (rv.model || "") +
+                  " ($" +
+                  Number(rv.dailyRate || 0).toFixed(2) +
+                  "/day, " +
+                  (rv.status || "n/a") +
+                  ")"
+              ) +
+              "</option>"
+          );
+        }
+        reservationVehicleSelect.innerHTML = reservationVehicleOptions.join("");
+      }
+    }
+
+    if (quoteVehicleSelect && quoteVehicleSelect.options.length === 0) {
+      if (safeVehicles.length === 0) {
+        quoteVehicleSelect.innerHTML = '<option value="">No vehicles available</option>';
+      } else {
+        var quoteVehicleOptions = [];
+        for (var k = 0; k < safeVehicles.length; k += 1) {
+          var qv = safeVehicles[k] || {};
+          quoteVehicleOptions.push(
+            '<option value="' +
+              escapeHtml(qv.id || "") +
+              '">' +
+              escapeHtml(
+                (qv.plateNumber || "") +
+                  " - " +
+                  (qv.make || "") +
+                  " " +
+                  (qv.model || "") +
+                  " ($" +
+                  Number(qv.dailyRate || 0).toFixed(2) +
+                  "/day, " +
+                  (qv.status || "n/a") +
+                  ")"
+              ) +
+              "</option>"
+          );
+        }
+        quoteVehicleSelect.innerHTML = quoteVehicleOptions.join("");
+      }
+    }
+
+    if (inlineToggle && inlineContainer && !inlineToggle.dataset.fallbackBound) {
+      inlineToggle.dataset.fallbackBound = "true";
+      var applyInlineCustomerMode = function () {
+        var isEnabled = inlineToggle.checked;
+        inlineContainer.classList.toggle("hidden", !isEnabled);
+        if (customerSelect) {
+          customerSelect.disabled = isEnabled;
+          customerSelect.required = !isEnabled;
+        }
+
+        var inlineFieldNames = [
+          "inlineCustomerFirstName",
+          "inlineCustomerLastName",
+          "inlineCustomerEmail",
+          "inlineCustomerPhone",
+          "inlineCustomerLicenseNumber",
+        ];
+        for (var m = 0; m < inlineFieldNames.length; m += 1) {
+          var field = inlineContainer.querySelector('[name="' + inlineFieldNames[m] + '"]');
+          if (!field) {
+            continue;
+          }
+          field.required = isEnabled;
+          if (!isEnabled) {
+            field.value = "";
+          }
+        }
+      };
+      applyInlineCustomerMode();
+      inlineToggle.addEventListener("change", applyInlineCustomerMode);
+    }
+
+    var listContainer = document.getElementById("reservation-list");
+    if (listContainer && isElementEffectivelyEmpty(listContainer)) {
+      if (safeReservations.length === 0) {
+        listContainer.innerHTML = "<p>No reservations yet.</p>";
+      } else {
+        var customerMap = {};
+        var vehicleMap = {};
+        for (var n = 0; n < safeCustomers.length; n += 1) {
+          customerMap[safeCustomers[n].id] = (safeCustomers[n].firstName || "") + " " + (safeCustomers[n].lastName || "");
+        }
+        for (var p = 0; p < safeVehicles.length; p += 1) {
+          vehicleMap[safeVehicles[p].id] =
+            (safeVehicles[p].plateNumber || "") + " (" + (safeVehicles[p].make || "") + " " + (safeVehicles[p].model || "") + ")";
+        }
+
+        var reservationRows = [];
+        for (var q = 0; q < safeReservations.length; q += 1) {
+          var item = safeReservations[q] || {};
+          var total =
+            item.pricing && typeof item.pricing.total === "number" ? item.pricing.total : 0;
+          var addOns = Array.isArray(item.addOns) && item.addOns.length > 0 ? item.addOns.join(", ") : "none";
+          reservationRows.push(
+            "<tr>" +
+              "<td>" +
+              escapeHtml(customerMap[item.customerId] || item.customerId || "") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(vehicleMap[item.vehicleId] || item.vehicleId || "") +
+              "</td>" +
+              "<td>" +
+              escapeHtml((item.startDate || "") + " -> " + (item.endDate || "")) +
+              "</td>" +
+              "<td><span class=\"badge\">" +
+              escapeHtml(item.status || "n/a") +
+              "</span></td>" +
+              "<td>" +
+              escapeHtml(formatMoney(total)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(addOns) +
+              "</td>" +
+              "</tr>"
+          );
+        }
+
+        listContainer.innerHTML =
+          "<table><thead><tr><th>Customer</th><th>Vehicle</th><th>Dates</th><th>Status</th><th>Price</th><th>Add-ons</th></tr></thead><tbody>" +
+          reservationRows.join("") +
+          "</tbody></table>";
+      }
+    }
+  }
+
+  function runReservationsPageFallback() {
+    requestJson("/api/customers", function (_customersError, customers) {
+      requestJson("/api/vehicles", function (_vehiclesError, vehicles) {
+        requestJson("/api/reservations", function (_reservationsError, reservations) {
+          renderReservationsFallback(customers || [], vehicles || [], reservations || []);
+        });
+      });
+    });
+  }
+
   function bootFallback() {
     var page = (document.body && document.body.getAttribute("data-page")) || "";
     if (page === "home") {
@@ -359,6 +544,10 @@
     }
     if (page === "customers") {
       runCustomersPageFallback();
+      return;
+    }
+    if (page === "reservations") {
+      runReservationsPageFallback();
     }
   }
 
