@@ -12,18 +12,24 @@ const {
   window.AppCommon;
 
 const EDITABLE_ROLES = new Set(["owner", "admin", "agent"]);
+const SEARCH_DEBOUNCE_MS = 220;
+const DEFAULT_FILTERS = {
+  search: "",
+  status: "",
+  category: "",
+  branch: "",
+  sort: "plate_asc",
+};
+const SORT_OPTIONS = new Set(["plate_asc", "rate_asc", "rate_desc", "year_desc", "status_asc"]);
 
 const state = {
   session: null,
-  vehicles: [],
+  allVehicles: [],
   filteredVehicles: [],
   vehiclePage: 1,
   vehiclePageSize: 8,
-  filters: {
-    search: "",
-    status: "",
-    category: "",
-  },
+  filters: { ...DEFAULT_FILTERS },
+  searchDebounceTimer: null,
 };
 
 function canEditVehicles() {
@@ -31,33 +37,72 @@ function canEditVehicles() {
   return EDITABLE_ROLES.has(role);
 }
 
+function normalizeVehicleForFiltering(vehicle) {
+  const dailyRate = Number(vehicle?.dailyRate);
+  const year = Number(vehicle?.year);
+  const searchable = [
+    vehicle?.plateNumber,
+    vehicle?.make,
+    vehicle?.model,
+    vehicle?.branchCode,
+    vehicle?.location,
+    vehicle?.category,
+    vehicle?.status,
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .join(" ");
+
+  return {
+    ...vehicle,
+    _searchIndex: searchable,
+    _dailyRate: Number.isFinite(dailyRate) ? dailyRate : 0,
+    _year: Number.isFinite(year) ? year : 0,
+  };
+}
+
+function sortVehicles(items, sortBy) {
+  const sorted = [...items];
+  switch (sortBy) {
+    case "rate_asc":
+      sorted.sort((a, b) => a._dailyRate - b._dailyRate);
+      return sorted;
+    case "rate_desc":
+      sorted.sort((a, b) => b._dailyRate - a._dailyRate);
+      return sorted;
+    case "year_desc":
+      sorted.sort((a, b) => b._year - a._year || String(a.plateNumber || "").localeCompare(String(b.plateNumber || "")));
+      return sorted;
+    case "status_asc":
+      sorted.sort((a, b) => String(a.status || "").localeCompare(String(b.status || "")));
+      return sorted;
+    case "plate_asc":
+    default:
+      sorted.sort((a, b) => String(a.plateNumber || "").localeCompare(String(b.plateNumber || "")));
+      return sorted;
+  }
+}
+
 function getFilteredVehicles() {
   const search = String(state.filters.search || "").trim().toLowerCase();
   const status = String(state.filters.status || "").trim().toLowerCase();
   const category = String(state.filters.category || "").trim().toLowerCase();
-
-  return state.vehicles.filter((vehicle) => {
+  const branch = String(state.filters.branch || "").trim().toUpperCase();
+  const filtered = state.allVehicles.filter((vehicle) => {
     if (status && String(vehicle.status || "").toLowerCase() !== status) {
       return false;
     }
     if (category && String(vehicle.category || "").toLowerCase() !== category) {
       return false;
     }
+    if (branch && String(vehicle.branchCode || "").toUpperCase() !== branch) {
+      return false;
+    }
     if (!search) {
       return true;
     }
-
-    const searchable = [
-      vehicle.plateNumber,
-      vehicle.make,
-      vehicle.model,
-      vehicle.branchCode,
-      vehicle.location,
-    ]
-      .map((value) => String(value || "").toLowerCase())
-      .join(" ");
-    return searchable.includes(search);
+    return String(vehicle._searchIndex || "").includes(search);
   });
+  return sortVehicles(filtered, state.filters.sort);
 }
 
 function renderFleetOverview() {
@@ -150,19 +195,18 @@ function renderVehicleList() {
 
   renderPaginationControls("vehicle-pagination", paginated, (nextPage) => {
     state.vehiclePage = nextPage;
-    renderVehicleList();
+    renderFleetPage();
   });
 }
 
-function populateCategoryFilter() {
+function populateCategoryFilter(selectedCategory = state.filters.category) {
   const categorySelect = document.getElementById("fleet-filter-category");
   if (!categorySelect) {
     return;
   }
-  const existing = String(categorySelect.value || "");
   const categories = Array.from(
     new Set(
-      state.vehicles
+      state.allVehicles
         .map((vehicle) => String(vehicle.category || "").trim().toLowerCase())
         .filter(Boolean)
     )
@@ -172,28 +216,141 @@ function populateCategoryFilter() {
     <option value="">All categories</option>
     ${categories.map((category) => `<option value="${category}">${category}</option>`).join("")}
   `;
-  if (existing && categories.includes(existing)) {
-    categorySelect.value = existing;
+  if (selectedCategory && categories.includes(selectedCategory)) {
+    categorySelect.value = selectedCategory;
   }
+}
+
+function populateBranchFilter(selectedBranch = state.filters.branch) {
+  const branchSelect = document.getElementById("fleet-filter-branch");
+  if (!branchSelect) {
+    return;
+  }
+  const branches = Array.from(
+    new Set(
+      state.allVehicles
+        .map((vehicle) => String(vehicle.branchCode || "").trim().toUpperCase())
+        .filter(Boolean)
+    )
+  ).sort();
+
+  branchSelect.innerHTML = `
+    <option value="">All branches</option>
+    ${branches.map((branch) => `<option value="${branch}">${branch}</option>`).join("")}
+  `;
+  if (selectedBranch && branches.includes(selectedBranch)) {
+    branchSelect.value = selectedBranch;
+  }
+}
+
+function renderFilterSummary() {
+  const summary = document.getElementById("fleet-filter-summary");
+  if (!summary) {
+    return;
+  }
+  const total = state.allVehicles.length;
+  const visible = state.filteredVehicles.length;
+  const activeFilterCount = ["search", "status", "category", "branch"].reduce(
+    (count, key) => count + (String(state.filters[key] || "").trim() ? 1 : 0),
+    0
+  );
+  summary.textContent =
+    activeFilterCount > 0
+      ? `Showing ${visible} of ${total} vehicles (${activeFilterCount} active filters)`
+      : `Showing ${visible} vehicles`;
 }
 
 function renderFleetPage() {
   state.filteredVehicles = getFilteredVehicles();
+  renderFilterSummary();
   renderFleetOverview();
   renderVehicleList();
+  syncFiltersToUrl();
 }
 
 async function loadFleetData() {
-  state.vehicles = await request("/api/vehicles");
+  const vehicles = await request("/api/vehicles");
+  state.allVehicles = Array.isArray(vehicles) ? vehicles.map((vehicle) => normalizeVehicleForFiltering(vehicle)) : [];
   populateCategoryFilter();
-  state.vehiclePage = 1;
+  populateBranchFilter();
+  syncFilterFormFromState();
   renderFleetPage();
 }
 
 function applyFilterFormValues(formData) {
   state.filters.search = String(formData.get("search") || "");
   state.filters.status = String(formData.get("status") || "");
-  state.filters.category = String(formData.get("category") || "");
+  state.filters.category = String(formData.get("category") || "").trim().toLowerCase();
+  state.filters.branch = String(formData.get("branch") || "").trim().toUpperCase();
+  const sort = String(formData.get("sort") || DEFAULT_FILTERS.sort);
+  state.filters.sort = SORT_OPTIONS.has(sort) ? sort : DEFAULT_FILTERS.sort;
+}
+
+function syncFilterFormFromState() {
+  const filterForm = document.getElementById("fleet-filter-form");
+  if (!filterForm) {
+    return;
+  }
+  if (filterForm.elements.search) {
+    filterForm.elements.search.value = state.filters.search;
+  }
+  if (filterForm.elements.status) {
+    filterForm.elements.status.value = state.filters.status;
+  }
+  if (filterForm.elements.category && typeof filterForm.elements.category.value !== "undefined") {
+    filterForm.elements.category.value = state.filters.category;
+  }
+  if (filterForm.elements.branch && typeof filterForm.elements.branch.value !== "undefined") {
+    filterForm.elements.branch.value = state.filters.branch;
+  }
+  if (filterForm.elements.sort) {
+    filterForm.elements.sort.value = state.filters.sort;
+  }
+}
+
+function initializeFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  state.filters.search = params.get("search") || DEFAULT_FILTERS.search;
+  state.filters.status = params.get("status") || DEFAULT_FILTERS.status;
+  state.filters.category = params.get("category") || DEFAULT_FILTERS.category;
+  state.filters.branch = params.get("branch") || DEFAULT_FILTERS.branch;
+  const sort = params.get("sort") || DEFAULT_FILTERS.sort;
+  state.filters.sort = SORT_OPTIONS.has(sort) ? sort : DEFAULT_FILTERS.sort;
+
+  const page = Number(params.get("page"));
+  state.vehiclePage = Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function syncFiltersToUrl() {
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+
+  const setParam = (key, value, defaultValue = "") => {
+    if (String(value || "") === String(defaultValue || "")) {
+      params.delete(key);
+      return;
+    }
+    params.set(key, value);
+  };
+
+  setParam("search", String(state.filters.search || "").trim(), DEFAULT_FILTERS.search);
+  setParam("status", state.filters.status, DEFAULT_FILTERS.status);
+  setParam("category", state.filters.category, DEFAULT_FILTERS.category);
+  setParam("branch", state.filters.branch, DEFAULT_FILTERS.branch);
+  setParam("sort", state.filters.sort, DEFAULT_FILTERS.sort);
+  if (state.vehiclePage > 1) {
+    params.set("page", String(state.vehiclePage));
+  } else {
+    params.delete("page");
+  }
+  window.history.replaceState({}, "", `${url.pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+}
+
+function clearSearchDebounce() {
+  if (state.searchDebounceTimer) {
+    window.clearTimeout(state.searchDebounceTimer);
+    state.searchDebounceTimer = null;
+  }
 }
 
 function updateAddPanelVisibility() {
@@ -298,14 +455,19 @@ function attachHandlers() {
   }
 
   if (filterForm) {
+    filterForm.dataset.handlerBound = "true";
     filterForm.addEventListener("input", () => {
       const formData = new FormData(filterForm);
       applyFilterFormValues(formData);
-      state.vehiclePage = 1;
-      renderFleetPage();
+      clearSearchDebounce();
+      state.searchDebounceTimer = window.setTimeout(() => {
+        state.vehiclePage = 1;
+        renderFleetPage();
+      }, SEARCH_DEBOUNCE_MS);
     });
 
     filterForm.addEventListener("change", () => {
+      clearSearchDebounce();
       const formData = new FormData(filterForm);
       applyFilterFormValues(formData);
       state.vehiclePage = 1;
@@ -315,13 +477,12 @@ function attachHandlers() {
 
   if (resetFiltersButton && filterForm) {
     resetFiltersButton.addEventListener("click", () => {
-      filterForm.reset();
-      state.filters = {
-        search: "",
-        status: "",
-        category: "",
-      };
+      clearSearchDebounce();
+      state.filters = { ...DEFAULT_FILTERS };
       state.vehiclePage = 1;
+      populateCategoryFilter();
+      populateBranchFilter();
+      syncFilterFormFromState();
       renderFleetPage();
     });
   }
@@ -330,6 +491,7 @@ function attachHandlers() {
 async function bootstrap() {
   try {
     state.session = await sessionReady;
+    initializeFiltersFromUrl();
     attachHandlers();
     setAddVehicleAvailability();
     updateAddPanelVisibility();

@@ -72,8 +72,27 @@
                     <option value="">All categories</option>
                   </select>
                 </label>
+                <label>
+                  Branch
+                  <select id="fleet-filter-branch" name="branch">
+                    <option value="">All branches</option>
+                  </select>
+                </label>
+                <label>
+                  Sort By
+                  <select id="fleet-filter-sort" name="sort">
+                    <option value="plate_asc">Plate (A-Z)</option>
+                    <option value="rate_asc">Rate (low-high)</option>
+                    <option value="rate_desc">Rate (high-low)</option>
+                    <option value="year_desc">Year (newest)</option>
+                    <option value="status_asc">Status (A-Z)</option>
+                  </select>
+                </label>
               </div>
-              <button type="button" id="fleet-filter-reset-btn">Reset Filters</button>
+              <div class="page-actions">
+                <p id="fleet-filter-summary" class="subtitle" style="margin: 0"></p>
+                <button type="button" id="fleet-filter-reset-btn">Reset Filters</button>
+              </div>
             </form>
           </section>
 
@@ -146,7 +165,7 @@
     </div>
 
     <script src="/common.js?v=20260328"></script>
-    <script src="/fleet.js?v=20260328"></script>
+    <script src="/fleet.js?v=20260330"></script>
     <script src="/ui-fallback.js?v=20260328"></script>
   </body>
 </html>
