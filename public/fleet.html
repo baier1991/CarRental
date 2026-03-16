@@ -73,6 +73,14 @@
                   </select>
                 </label>
                 <label>
+                  Daily Rate (Min)
+                  <input type="number" id="fleet-filter-min-rate" name="minRate" min="0" step="0.01" placeholder="0.00" />
+                </label>
+                <label>
+                  Daily Rate (Max)
+                  <input type="number" id="fleet-filter-max-rate" name="maxRate" min="0" step="0.01" placeholder="500.00" />
+                </label>
+                <label>
                   Branch
                   <select id="fleet-filter-branch" name="branch">
                     <option value="">All branches</option>
@@ -89,10 +97,18 @@
                   </select>
                 </label>
               </div>
+              <div id="fleet-status-quick-filters" class="filter-chip-row" aria-label="Quick status filters">
+                <button type="button" class="filter-chip active" data-status="">All</button>
+                <button type="button" class="filter-chip" data-status="available">Available</button>
+                <button type="button" class="filter-chip" data-status="maintenance">Maintenance</button>
+                <button type="button" class="filter-chip" data-status="cleaning">Cleaning</button>
+                <button type="button" class="filter-chip" data-status="inactive">Inactive</button>
+              </div>
               <div class="page-actions">
                 <p id="fleet-filter-summary" class="subtitle" style="margin: 0"></p>
                 <button type="button" id="fleet-filter-reset-btn">Reset Filters</button>
               </div>
+              <div id="fleet-active-filters" class="filter-pill-row hidden" aria-live="polite"></div>
             </form>
           </section>
 
@@ -165,7 +181,7 @@
     </div>
 
     <script src="/common.js?v=20260328"></script>
-    <script src="/fleet.js?v=20260330"></script>
-    <script src="/ui-fallback.js?v=20260333"></script>
+    <script src="/fleet.js?v=20260331"></script>
+    <script src="/ui-fallback.js?v=20260334"></script>
   </body>
 </html>

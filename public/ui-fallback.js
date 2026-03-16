@@ -139,19 +139,36 @@
         status: "",
         category: "",
         branch: "",
+        minRate: "",
+        maxRate: "",
         sort: "plate_asc",
       };
+    }
+    var minRateRaw = String(form.elements.minRate ? form.elements.minRate.value : "").trim();
+    var maxRateRaw = String(form.elements.maxRate ? form.elements.maxRate.value : "").trim();
+    var minRateNumber = Number(minRateRaw);
+    var maxRateNumber = Number(maxRateRaw);
+    if (isFinite(minRateNumber) && isFinite(maxRateNumber) && minRateNumber >= 0 && maxRateNumber >= 0 && minRateNumber > maxRateNumber) {
+      var temp = minRateNumber;
+      minRateNumber = maxRateNumber;
+      maxRateNumber = temp;
     }
     return {
       search: String(form.elements.search ? form.elements.search.value : "").trim().toLowerCase(),
       status: String(form.elements.status ? form.elements.status.value : "").trim().toLowerCase(),
       category: String(form.elements.category ? form.elements.category.value : "").trim().toLowerCase(),
       branch: String(form.elements.branch ? form.elements.branch.value : "").trim().toUpperCase(),
+      minRate: isFinite(minRateNumber) && minRateNumber >= 0 ? String(minRateNumber) : "",
+      maxRate: isFinite(maxRateNumber) && maxRateNumber >= 0 ? String(maxRateNumber) : "",
       sort: String(form.elements.sort ? form.elements.sort.value : "plate_asc"),
     };
   }
 
   function filterFleetVehicles(normalizedVehicles, filters) {
+    var minRate = Number(filters.minRate);
+    var maxRate = Number(filters.maxRate);
+    var hasMinRate = isFinite(minRate) && minRate >= 0;
+    var hasMaxRate = isFinite(maxRate) && maxRate >= 0;
     var filtered = normalizedVehicles.filter(function (item) {
       var vehicle = item.original || {};
       if (filters.status && String(vehicle.status || "").toLowerCase() !== filters.status) {
@@ -161,6 +178,12 @@
         return false;
       }
       if (filters.branch && String(vehicle.branchCode || "").toUpperCase() !== filters.branch) {
+        return false;
+      }
+      if (hasMinRate && item.dailyRate < minRate) {
+        return false;
+      }
+      if (hasMaxRate && item.dailyRate > maxRate) {
         return false;
       }
       if (filters.search && item.searchIndex.indexOf(filters.search) < 0) {
@@ -258,10 +281,60 @@
     if (filters.status) activeCount += 1;
     if (filters.category) activeCount += 1;
     if (filters.branch) activeCount += 1;
+    if (filters.minRate) activeCount += 1;
+    if (filters.maxRate) activeCount += 1;
     summary.textContent =
       activeCount > 0
         ? "Showing " + visibleCount + " of " + totalCount + " vehicles (" + activeCount + " active filters)"
         : "Showing " + visibleCount + " vehicles";
+  }
+
+  function syncFleetFallbackStatusQuickFilters(filters) {
+    var quickFilters = document.getElementById("fleet-status-quick-filters");
+    if (!quickFilters) {
+      return;
+    }
+    var activeStatus = String(filters && filters.status || "").trim().toLowerCase();
+    var buttons = quickFilters.querySelectorAll("button[data-status]");
+    for (var i = 0; i < buttons.length; i += 1) {
+      var buttonStatus = String(buttons[i].dataset.status || "").trim().toLowerCase();
+      buttons[i].classList.toggle("active", buttonStatus === activeStatus);
+    }
+  }
+
+  function renderFleetFallbackActiveFilters(filters) {
+    var container = document.getElementById("fleet-active-filters");
+    if (!container) {
+      return;
+    }
+    var pills = [];
+    if (filters.search) pills.push({ key: "search", label: "Search: " + filters.search });
+    if (filters.status) pills.push({ key: "status", label: "Status: " + filters.status });
+    if (filters.category) pills.push({ key: "category", label: "Category: " + filters.category });
+    if (filters.branch) pills.push({ key: "branch", label: "Branch: " + filters.branch });
+    if (filters.minRate) pills.push({ key: "minRate", label: "Min rate: " + formatMoney(filters.minRate) });
+    if (filters.maxRate) pills.push({ key: "maxRate", label: "Max rate: " + formatMoney(filters.maxRate) });
+
+    if (!pills.length) {
+      container.classList.add("hidden");
+      container.innerHTML = "";
+      return;
+    }
+
+    var html = [];
+    for (var i = 0; i < pills.length; i += 1) {
+      html.push(
+        '<span class="filter-pill">' +
+          escapeHtml(pills[i].label) +
+          '<button type="button" aria-label="Clear ' +
+          escapeHtml(pills[i].label) +
+          '" data-clear-filter="' +
+          escapeHtml(pills[i].key) +
+          '">&times;</button></span>'
+      );
+    }
+    container.classList.remove("hidden");
+    container.innerHTML = html.join("");
   }
 
   function populateFleetFallbackFilterOptions(normalizedVehicles) {
@@ -308,6 +381,8 @@
     renderFleetMetrics(filtered);
     renderFleetList(filtered);
     renderFleetFilterSummary(normalizedVehicles.length, filtered.length, filters);
+    syncFleetFallbackStatusQuickFilters(filters);
+    renderFleetFallbackActiveFilters(filters);
   }
 
   function bindFleetFallbackInteractions() {
@@ -387,6 +462,8 @@
     var normalizedVehicles = normalizeFleetVehicles(vehicles);
     var filterForm = document.getElementById("fleet-filter-form");
     var resetButton = document.getElementById("fleet-filter-reset-btn");
+    var quickFilters = document.getElementById("fleet-status-quick-filters");
+    var activeFilters = document.getElementById("fleet-active-filters");
     if (!filterForm || filterForm.dataset.fallbackBound === "true") {
       return;
     }
@@ -401,6 +478,8 @@
       renderFleetMetrics(filtered);
       renderFleetList(filtered);
       renderFleetFilterSummary(normalizedVehicles.length, filtered.length, filters);
+      syncFleetFallbackStatusQuickFilters(filters);
+      renderFleetFallbackActiveFilters(filters);
     };
 
     filterForm.addEventListener("input", function () {
@@ -420,6 +499,43 @@
     if (resetButton) {
       resetButton.addEventListener("click", function () {
         filterForm.reset();
+        apply();
+      });
+    }
+
+    if (quickFilters && quickFilters.dataset.fallbackBound !== "true") {
+      quickFilters.dataset.fallbackBound = "true";
+      quickFilters.addEventListener("click", function (event) {
+        var target = event.target;
+        if (!target || !target.closest) {
+          return;
+        }
+        var button = target.closest("button[data-status]");
+        if (!button) {
+          return;
+        }
+        if (filterForm.elements.status) {
+          filterForm.elements.status.value = String(button.dataset.status || "").trim().toLowerCase();
+        }
+        apply();
+      });
+    }
+
+    if (activeFilters && activeFilters.dataset.fallbackBound !== "true") {
+      activeFilters.dataset.fallbackBound = "true";
+      activeFilters.addEventListener("click", function (event) {
+        var target = event.target;
+        if (!target || !target.closest) {
+          return;
+        }
+        var clearButton = target.closest("button[data-clear-filter]");
+        if (!clearButton) {
+          return;
+        }
+        var key = String(clearButton.dataset.clearFilter || "");
+        if (filterForm.elements[key]) {
+          filterForm.elements[key].value = "";
+        }
         apply();
       });
     }
