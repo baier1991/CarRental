@@ -48,69 +48,169 @@
     return String(element.textContent || "").trim().length === 0;
   }
 
-  function renderFleetFallback(vehicles) {
-    var listContainer = document.getElementById("vehicle-list");
-    if (!listContainer || !isElementEffectivelyEmpty(listContainer)) {
-      return;
-    }
-
+  function normalizeFleetVehicles(vehicles) {
     var safeVehicles = Array.isArray(vehicles) ? vehicles : [];
-    if (safeVehicles.length === 0) {
-      listContainer.innerHTML = "<p>No vehicles yet.</p>";
-    } else {
-      var rows = [];
-      for (var i = 0; i < safeVehicles.length; i += 1) {
-        var vehicle = safeVehicles[i] || {};
-        rows.push(
-          "<tr>" +
-            "<td>" +
-            escapeHtml(vehicle.plateNumber || "") +
-            "</td>" +
-            "<td>" +
-            escapeHtml((vehicle.year || "") + " " + (vehicle.make || "") + " " + (vehicle.model || "")) +
-            "</td>" +
-            "<td>" +
-            escapeHtml(vehicle.category || "n/a") +
-            "</td>" +
-            "<td>Day: " +
-            escapeHtml(formatMoney(vehicle.dailyRate || 0)) +
-            "</td>" +
-            "<td><span class=\"badge\">" +
-            escapeHtml(vehicle.status || "n/a") +
-            "</span></td>" +
-            "<td>" +
-            escapeHtml(vehicle.branchCode || "n/a") +
-            "<br /><small>" +
-            escapeHtml(vehicle.location || "n/a") +
-            "</small></td>" +
-            "<td><a href=\"/vehicle-profile.html?vehicleId=" +
-            encodeURIComponent(vehicle.id || "") +
-            "\">Open Profile</a></td>" +
-            "</tr>"
-        );
-      }
+    return safeVehicles.map(function (vehicle) {
+      var dailyRate = Number(vehicle && vehicle.dailyRate);
+      var year = Number(vehicle && vehicle.year);
+      var searchIndex = [
+        vehicle && vehicle.plateNumber,
+        vehicle && vehicle.make,
+        vehicle && vehicle.model,
+        vehicle && vehicle.branchCode,
+        vehicle && vehicle.location,
+        vehicle && vehicle.category,
+        vehicle && vehicle.status,
+      ]
+        .map(function (value) {
+          return String(value || "").toLowerCase();
+        })
+        .join(" ");
+      return {
+        original: vehicle || {},
+        searchIndex: searchIndex,
+        dailyRate: isFinite(dailyRate) ? dailyRate : 0,
+        year: isFinite(year) ? year : 0,
+      };
+    });
+  }
 
-      listContainer.innerHTML =
-        "<table>" +
-        "<thead><tr><th>Plate</th><th>Vehicle</th><th>Category</th><th>Rates</th><th>Status</th><th>Branch / Location</th><th>Action</th></tr></thead>" +
-        "<tbody>" +
-        rows.join("") +
-        "</tbody>" +
-        "</table>";
+  function sortFleetVehicles(items, sortBy) {
+    var sorted = items.slice();
+    if (sortBy === "rate_asc") {
+      sorted.sort(function (a, b) { return a.dailyRate - b.dailyRate; });
+      return sorted;
     }
+    if (sortBy === "rate_desc") {
+      sorted.sort(function (a, b) { return b.dailyRate - a.dailyRate; });
+      return sorted;
+    }
+    if (sortBy === "year_desc") {
+      sorted.sort(function (a, b) {
+        if (b.year !== a.year) {
+          return b.year - a.year;
+        }
+        return String(a.original && a.original.plateNumber || "").localeCompare(String(b.original && b.original.plateNumber || ""));
+      });
+      return sorted;
+    }
+    if (sortBy === "status_asc") {
+      sorted.sort(function (a, b) {
+        return String(a.original && a.original.status || "").localeCompare(String(b.original && b.original.status || ""));
+      });
+      return sorted;
+    }
+    sorted.sort(function (a, b) {
+      return String(a.original && a.original.plateNumber || "").localeCompare(String(b.original && b.original.plateNumber || ""));
+    });
+    return sorted;
+  }
 
-    var metricsContainer = document.getElementById("fleet-overview-metrics");
-    if (!metricsContainer || !isElementEffectivelyEmpty(metricsContainer)) {
+  function getFleetFiltersFromForm() {
+    var form = document.getElementById("fleet-filter-form");
+    if (!form) {
+      return {
+        search: "",
+        status: "",
+        category: "",
+        branch: "",
+        sort: "plate_asc",
+      };
+    }
+    return {
+      search: String(form.elements.search ? form.elements.search.value : "").trim().toLowerCase(),
+      status: String(form.elements.status ? form.elements.status.value : "").trim().toLowerCase(),
+      category: String(form.elements.category ? form.elements.category.value : "").trim().toLowerCase(),
+      branch: String(form.elements.branch ? form.elements.branch.value : "").trim().toUpperCase(),
+      sort: String(form.elements.sort ? form.elements.sort.value : "plate_asc"),
+    };
+  }
+
+  function filterFleetVehicles(normalizedVehicles, filters) {
+    var filtered = normalizedVehicles.filter(function (item) {
+      var vehicle = item.original || {};
+      if (filters.status && String(vehicle.status || "").toLowerCase() !== filters.status) {
+        return false;
+      }
+      if (filters.category && String(vehicle.category || "").toLowerCase() !== filters.category) {
+        return false;
+      }
+      if (filters.branch && String(vehicle.branchCode || "").toUpperCase() !== filters.branch) {
+        return false;
+      }
+      if (filters.search && item.searchIndex.indexOf(filters.search) < 0) {
+        return false;
+      }
+      return true;
+    });
+    return sortFleetVehicles(filtered, filters.sort);
+  }
+
+  function renderFleetList(filteredItems) {
+    var listContainer = document.getElementById("vehicle-list");
+    if (!listContainer) {
       return;
     }
-    var total = safeVehicles.length;
+    if (filteredItems.length === 0) {
+      listContainer.innerHTML = "<p>No vehicles yet.</p>";
+      return;
+    }
+
+    var rows = [];
+    for (var i = 0; i < filteredItems.length; i += 1) {
+      var vehicle = filteredItems[i].original || {};
+      rows.push(
+        "<tr>" +
+          "<td>" +
+          escapeHtml(vehicle.plateNumber || "") +
+          "</td>" +
+          "<td>" +
+          escapeHtml((vehicle.year || "") + " " + (vehicle.make || "") + " " + (vehicle.model || "")) +
+          "</td>" +
+          "<td>" +
+          escapeHtml(vehicle.category || "n/a") +
+          "</td>" +
+          "<td>Day: " +
+          escapeHtml(formatMoney(vehicle.dailyRate || 0)) +
+          "</td>" +
+          "<td><span class=\"badge\">" +
+          escapeHtml(vehicle.status || "n/a") +
+          "</span></td>" +
+          "<td>" +
+          escapeHtml(vehicle.branchCode || "n/a") +
+          "<br /><small>" +
+          escapeHtml(vehicle.location || "n/a") +
+          "</small></td>" +
+          "<td><a href=\"/vehicle-profile.html?vehicleId=" +
+          encodeURIComponent(vehicle.id || "") +
+          "\">Open Profile</a></td>" +
+          "</tr>"
+      );
+    }
+
+    listContainer.innerHTML =
+      "<table>" +
+      "<thead><tr><th>Plate</th><th>Vehicle</th><th>Category</th><th>Rates</th><th>Status</th><th>Branch / Location</th><th>Action</th></tr></thead>" +
+      "<tbody>" +
+      rows.join("") +
+      "</tbody>" +
+      "</table>";
+  }
+
+  function renderFleetMetrics(filteredItems) {
+    var metricsContainer = document.getElementById("fleet-overview-metrics");
+    if (!metricsContainer) {
+      return;
+    }
+    var total = filteredItems.length;
     var available = 0;
     var sumDaily = 0;
-    for (var j = 0; j < safeVehicles.length; j += 1) {
-      if (safeVehicles[j] && safeVehicles[j].status === "available") {
+    for (var i = 0; i < filteredItems.length; i += 1) {
+      var vehicle = filteredItems[i].original || {};
+      if (vehicle.status === "available") {
         available += 1;
       }
-      sumDaily += Number(safeVehicles[j] && safeVehicles[j].dailyRate ? safeVehicles[j].dailyRate : 0);
+      sumDaily += Number(vehicle.dailyRate || 0);
     }
     var avgRate = total > 0 ? sumDaily / total : 0;
     metricsContainer.innerHTML =
@@ -121,6 +221,68 @@
       '</div></div><div class="metric"><div class="label">Avg Daily Rate</div><div class="value">' +
       escapeHtml(formatMoney(avgRate)) +
       "</div></div>";
+  }
+
+  function renderFleetFilterSummary(totalCount, visibleCount, filters) {
+    var summary = document.getElementById("fleet-filter-summary");
+    if (!summary) {
+      return;
+    }
+    var activeCount = 0;
+    if (filters.search) activeCount += 1;
+    if (filters.status) activeCount += 1;
+    if (filters.category) activeCount += 1;
+    if (filters.branch) activeCount += 1;
+    summary.textContent =
+      activeCount > 0
+        ? "Showing " + visibleCount + " of " + totalCount + " vehicles (" + activeCount + " active filters)"
+        : "Showing " + visibleCount + " vehicles";
+  }
+
+  function populateFleetFallbackFilterOptions(normalizedVehicles) {
+    var categorySelect = document.getElementById("fleet-filter-category");
+    var branchSelect = document.getElementById("fleet-filter-branch");
+
+    if (categorySelect && categorySelect.options.length <= 1) {
+      var categories = [];
+      for (var i = 0; i < normalizedVehicles.length; i += 1) {
+        var category = String(normalizedVehicles[i].original && normalizedVehicles[i].original.category || "").trim().toLowerCase();
+        if (category && categories.indexOf(category) < 0) {
+          categories.push(category);
+        }
+      }
+      categories.sort();
+      var categoryOptions = ['<option value="">All categories</option>'];
+      for (var j = 0; j < categories.length; j += 1) {
+        categoryOptions.push('<option value="' + escapeHtml(categories[j]) + '">' + escapeHtml(categories[j]) + "</option>");
+      }
+      categorySelect.innerHTML = categoryOptions.join("");
+    }
+
+    if (branchSelect && branchSelect.options.length <= 1) {
+      var branches = [];
+      for (var k = 0; k < normalizedVehicles.length; k += 1) {
+        var branch = String(normalizedVehicles[k].original && normalizedVehicles[k].original.branchCode || "").trim().toUpperCase();
+        if (branch && branches.indexOf(branch) < 0) {
+          branches.push(branch);
+        }
+      }
+      branches.sort();
+      var branchOptions = ['<option value="">All branches</option>'];
+      for (var m = 0; m < branches.length; m += 1) {
+        branchOptions.push('<option value="' + escapeHtml(branches[m]) + '">' + escapeHtml(branches[m]) + "</option>");
+      }
+      branchSelect.innerHTML = branchOptions.join("");
+    }
+  }
+
+  function renderFleetFallback(vehicles) {
+    var normalizedVehicles = normalizeFleetVehicles(vehicles);
+    var filters = getFleetFiltersFromForm();
+    var filtered = filterFleetVehicles(normalizedVehicles, filters);
+    renderFleetMetrics(filtered);
+    renderFleetList(filtered);
+    renderFleetFilterSummary(normalizedVehicles.length, filtered.length, filters);
   }
 
   function bindFleetFallbackInteractions() {
@@ -194,6 +356,49 @@
         xhr.send(JSON.stringify(payload));
       });
     }
+  }
+
+  function bindFleetFallbackFiltering(vehicles) {
+    var normalizedVehicles = normalizeFleetVehicles(vehicles);
+    var filterForm = document.getElementById("fleet-filter-form");
+    var resetButton = document.getElementById("fleet-filter-reset-btn");
+    if (!filterForm || filterForm.dataset.handlerBound === "true" || filterForm.dataset.fallbackBound === "true") {
+      return;
+    }
+
+    filterForm.dataset.fallbackBound = "true";
+    populateFleetFallbackFilterOptions(normalizedVehicles);
+
+    var searchTimer = null;
+    var apply = function () {
+      var filters = getFleetFiltersFromForm();
+      var filtered = filterFleetVehicles(normalizedVehicles, filters);
+      renderFleetMetrics(filtered);
+      renderFleetList(filtered);
+      renderFleetFilterSummary(normalizedVehicles.length, filtered.length, filters);
+    };
+
+    filterForm.addEventListener("input", function () {
+      if (searchTimer) {
+        clearTimeout(searchTimer);
+      }
+      searchTimer = setTimeout(apply, 220);
+    });
+
+    filterForm.addEventListener("change", function () {
+      if (searchTimer) {
+        clearTimeout(searchTimer);
+      }
+      apply();
+    });
+
+    if (resetButton) {
+      resetButton.addEventListener("click", function () {
+        filterForm.reset();
+        apply();
+      });
+    }
+    apply();
   }
 
   function renderCustomersFallback(customers, reservations) {
@@ -407,6 +612,7 @@
       }
       renderFleetFallback(vehicles);
       bindFleetFallbackInteractions();
+      bindFleetFallbackFiltering(vehicles);
     });
   }
 
