@@ -1,6 +1,32 @@
 const { request, formatMoney, showToast, sessionReady, markPageReady } = window.AppCommon;
 
+function defaultDashboard() {
+  return {
+    fleetSize: 0,
+    availableVehicles: 0,
+    activeReservations: 0,
+    activeCustomers: 0,
+    utilizationRate: 0,
+    expectedRevenue: 0,
+    openWorkOrders: 0,
+    overdueWorkOrders: 0,
+    maintenanceSpend: 0,
+    vehiclesNeedingAttention: 0,
+    criticalVehicleAlerts: 0,
+    upcomingPickups: [],
+  };
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function renderMetrics(dashboard) {
+  const container = document.getElementById("dashboard-metrics");
+  if (!container) {
+    return;
+  }
+
   const metrics = [
     { label: "Fleet Size", value: dashboard.fleetSize },
     { label: "Available Vehicles", value: dashboard.availableVehicles },
@@ -15,7 +41,7 @@ function renderMetrics(dashboard) {
     { label: "Critical Alerts", value: dashboard.criticalVehicleAlerts || 0 },
   ];
 
-  document.getElementById("dashboard-metrics").innerHTML = metrics
+  container.innerHTML = metrics
     .map(
       (metric) => `
       <div class="metric">
@@ -29,6 +55,9 @@ function renderMetrics(dashboard) {
 
 function renderUpcomingPickups(dashboard, vehicles, customers) {
   const container = document.getElementById("upcoming-pickups");
+  if (!container) {
+    return;
+  }
   const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, `${vehicle.plateNumber} ${vehicle.make} ${vehicle.model}`]));
   const customerMap = new Map(customers.map((customer) => [customer.id, `${customer.firstName} ${customer.lastName}`]));
   const pickups = dashboard.upcomingPickups || [];
@@ -68,6 +97,9 @@ function renderUpcomingPickups(dashboard, vehicles, customers) {
 
 function renderOpenWorkOrders(workOrders, vehicles) {
   const container = document.getElementById("open-work-orders");
+  if (!container) {
+    return;
+  }
   const active = workOrders.filter((workOrder) => ["open", "in_progress", "on_hold"].includes(workOrder.status));
   const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle.plateNumber]));
 
@@ -110,35 +142,31 @@ function renderOpenWorkOrders(workOrders, vehicles) {
 async function bootstrap() {
   try {
     await sessionReady;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("status") === "reseed_done") {
-      showToast("Tenant demo data reseeded.");
-    } else if (params.get("status") === "reseed_failed") {
-      showToast("Tenant reseed failed.", true);
-    }
 
-    const restoreButton = document.getElementById("restore-demo-data-btn");
-    if (restoreButton) {
-      restoreButton.addEventListener("click", async () => {
-        try {
-          await request("/api/admin/seed-demo", { method: "POST" });
-          showToast("Demo data restored.");
-          window.location.reload();
-        } catch (error) {
-          showToast(error.message, true);
-        }
-      });
-    }
-
-    const [dashboard, vehicles, customers, workOrders] = await Promise.all([
+    const results = await Promise.allSettled([
       request("/api/dashboard"),
       request("/api/vehicles"),
       request("/api/customers"),
       request("/api/work-orders"),
     ]);
+
+    const dashboard =
+      results[0].status === "fulfilled" && results[0].value && typeof results[0].value === "object"
+        ? results[0].value
+        : defaultDashboard();
+    const vehicles = results[1].status === "fulfilled" ? asArray(results[1].value) : [];
+    const customers = results[2].status === "fulfilled" ? asArray(results[2].value) : [];
+    const workOrders = results[3].status === "fulfilled" ? asArray(results[3].value) : [];
+
     renderMetrics(dashboard);
     renderUpcomingPickups(dashboard, vehicles, customers);
     renderOpenWorkOrders(workOrders, vehicles);
+
+    const hasPartialFailure = results.some((result) => result.status === "rejected");
+    if (hasPartialFailure) {
+      showToast("Some dashboard widgets could not load. Showing available data.", true);
+    }
+
     markPageReady("home");
   } catch (error) {
     showToast(error.message, true);

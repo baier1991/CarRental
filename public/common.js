@@ -21,25 +21,72 @@ function showToast(message, isError = false) {
   }, 2800);
 }
 
+function confirmAction(message) {
+  const text = String(message || "").trim() || "Are you sure?";
+  if (typeof window.confirm !== "function") {
+    return true;
+  }
+  return window.confirm(text);
+}
+
+function appendNoCacheParam(url) {
+  const separator = String(url).includes("?") ? "&" : "?";
+  return `${url}${separator}_ts=${Date.now()}`;
+}
+
+function normalizeNextPath(pathValue) {
+  const nextPath = String(pathValue || "").trim();
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return "/";
+  }
+  if (
+    nextPath === "/login" ||
+    nextPath === "/login/" ||
+    nextPath.startsWith("/login.html") ||
+    nextPath.startsWith("/login?")
+  ) {
+    return "/";
+  }
+  if (nextPath.startsWith("/api/")) {
+    return "/";
+  }
+  return nextPath || "/";
+}
+
+function buildLoginUrl() {
+  const nextPath = normalizeNextPath(
+    `${window.location.pathname || "/"}${window.location.search || ""}${window.location.hash || ""}`
+  );
+  if (nextPath === "/" || nextPath === "/index.html") {
+    return "/login.html";
+  }
+  return `/login.html?next=${encodeURIComponent(nextPath)}`;
+}
+
 async function request(url, options = {}) {
+  const { suppressAuthRedirect = false, ...fetchOptions } = options;
   const headers = new Headers(options.headers || {});
   const isFormData = options.body instanceof FormData;
   if (!isFormData && options.body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(url, {
-    ...options,
+  const method = String(fetchOptions.method || "GET").toUpperCase();
+  const requestUrl = method === "GET" || method === "HEAD" ? appendNoCacheParam(url) : url;
+
+  const response = await fetch(requestUrl, {
+    ...fetchOptions,
     headers,
+    cache: "no-store",
   });
 
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json() : await response.text();
 
-  if (response.status === 401 && !options.suppressAuthRedirect) {
+  if (response.status === 401 && !suppressAuthRedirect) {
     const currentPath = window.location.pathname;
     if (!currentPath.endsWith("/login.html")) {
-      window.location.replace("/login.html");
+      window.location.replace(buildLoginUrl());
     }
   }
 
@@ -80,7 +127,11 @@ function getCurrentPageKey() {
   }
 
   const fileName = pathName.split("/").pop() || "";
-  return fileName.replace(".html", "") || "home";
+  const pageKey = fileName.replace(".html", "") || "home";
+  if (pageKey === "vehicle-profile") {
+    return "fleet";
+  }
+  return pageKey;
 }
 
 function markPageStatus(status, pageKey = getCurrentPageKey()) {
@@ -253,6 +304,9 @@ async function initializeSession() {
     const logoutButton = document.getElementById("logout-btn");
     if (logoutButton) {
       logoutButton.addEventListener("click", async () => {
+        if (!confirmAction("Log out now?")) {
+          return;
+        }
         try {
           await request("/api/auth/logout", { method: "POST", suppressAuthRedirect: true });
         } catch (_error) {
@@ -264,7 +318,7 @@ async function initializeSession() {
 
     return session;
   } catch (_error) {
-    window.location.replace("/login.html");
+    window.location.replace(buildLoginUrl());
     return null;
   }
 }
@@ -276,6 +330,7 @@ const sessionReady = (async () => {
 
 window.AppCommon = {
   showToast,
+  confirmAction,
   request,
   formatMoney,
   collectCheckedValues,

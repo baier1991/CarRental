@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Rental OS - Maintenance</title>
-    <link rel="stylesheet" href="/styles.css?v=20260319" />
+    <link rel="stylesheet" href="/styles.css?v=20260322" />
   </head>
   <body data-page="maintenance">
     <div class="app-shell">
@@ -33,83 +33,188 @@
         </header>
 
         <main class="container">
+          <section class="card">
+            <h2>Maintenance Overview</h2>
+            <div id="maintenance-overview-metrics" class="metrics-grid"></div>
+          </section>
+
           <section class="grid-2">
             <article class="card">
               <h2>Upload Vehicle Documents</h2>
               <form id="vehicle-document-form" class="stack">
-            <label>Vehicle <select name="vehicleId" id="document-vehicle-select" required></select></label>
-            <div class="grid-2">
-              <label>
-                Document Type
-                <select name="documentType">
-                  <option value="registration">registration</option>
-                  <option value="insurance">insurance</option>
-                  <option value="inspection">inspection</option>
-                  <option value="contract">contract</option>
-                  <option value="other">other</option>
-                </select>
-              </label>
-              <label>Expiry Date <input type="date" name="expiryDate" /></label>
-            </div>
-            <label>Document File (PDF/JPG/PNG/WEBP, max 10MB) <input type="file" name="document" required /></label>
-            <label>Notes <textarea name="notes" rows="2"></textarea></label>
+                <label>Vehicle <select name="vehicleId" id="document-vehicle-select" required></select></label>
+                <div class="grid-2">
+                  <label>
+                    Document Type
+                    <select name="documentType">
+                      <option value="registration">registration</option>
+                      <option value="insurance">insurance</option>
+                      <option value="inspection">inspection</option>
+                      <option value="contract">contract</option>
+                      <option value="other">other</option>
+                    </select>
+                  </label>
+                  <label>Expiry Date <input type="date" name="expiryDate" /></label>
+                </div>
+                <label>Document File (PDF/JPG/PNG/WEBP, max 10MB) <input type="file" name="document" required /></label>
+                <label>Notes <textarea name="notes" rows="2"></textarea></label>
                 <button type="submit">Upload Document</button>
               </form>
+              <div id="document-form-hint" class="soft-box hidden"></div>
             </article>
 
             <article class="card">
               <h2>Create Work Order</h2>
               <form id="work-order-form" class="stack">
-            <label>Vehicle <select name="vehicleId" id="work-order-vehicle" required></select></label>
-            <div class="grid-2">
-              <label>Title <input name="title" required /></label>
-              <label>Scheduled Date <input type="date" name="scheduledDate" /></label>
-            </div>
-            <div class="grid-2">
-              <label>
-                Priority
-                <select name="priority">
-                  <option value="low">low</option>
-                  <option value="medium">medium</option>
-                  <option value="high">high</option>
-                  <option value="critical">critical</option>
-                </select>
-              </label>
-              <label>
-                Status
-                <select name="status">
-                  <option value="open">open</option>
-                  <option value="in_progress">in_progress</option>
-                  <option value="on_hold">on_hold</option>
-                  <option value="completed">completed</option>
-                  <option value="cancelled">cancelled</option>
-                </select>
-              </label>
-            </div>
-            <div class="grid-2">
-              <label>Cost Estimate <input type="number" name="costEstimate" min="0" step="0.01" /></label>
-              <label>Vendor Name <input name="vendorName" /></label>
-            </div>
-            <label>Description <textarea name="description" rows="2"></textarea></label>
-            <label>Notes <textarea name="notes" rows="2"></textarea></label>
+                <label>Vehicle <select name="vehicleId" id="work-order-vehicle" required></select></label>
+                <div class="grid-2">
+                  <label>Title <input name="title" required /></label>
+                  <label>Scheduled Date <input type="date" name="scheduledDate" /></label>
+                </div>
+                <div class="grid-2">
+                  <label>
+                    Priority
+                    <select name="priority">
+                      <option value="low">low</option>
+                      <option value="medium">medium</option>
+                      <option value="high">high</option>
+                      <option value="critical">critical</option>
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select name="status">
+                      <option value="open">open</option>
+                      <option value="in_progress">in_progress</option>
+                      <option value="on_hold">on_hold</option>
+                      <option value="completed">completed</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="grid-2">
+                  <label>Cost Estimate <input type="number" name="costEstimate" min="0" step="0.01" /></label>
+                  <label>Vendor Name <input name="vendorName" /></label>
+                </div>
+                <label>Description <textarea name="description" rows="2"></textarea></label>
+                <label>Notes <textarea name="notes" rows="2"></textarea></label>
                 <button type="submit">Create Work Order</button>
               </form>
+              <div id="work-order-form-hint" class="soft-box hidden"></div>
             </article>
           </section>
 
           <section class="grid-2">
             <article class="card">
               <h2>Document Library</h2>
-              <label class="stack">
-                View docs for vehicle
-                <select id="document-list-vehicle-select"></select>
-              </label>
+              <form id="document-filter-form" class="stack" autocomplete="off">
+                <div class="grid-2">
+                  <label>
+                    View docs for vehicle
+                    <select id="document-list-vehicle-select" name="vehicleId"></select>
+                  </label>
+                  <label>
+                    Compliance
+                    <select id="document-filter-compliance" name="compliance">
+                      <option value="">All compliance states</option>
+                      <option value="expired">expired</option>
+                      <option value="expiring_soon">expiring_soon (next 30 days)</option>
+                      <option value="valid">valid</option>
+                      <option value="no_expiry">no_expiry</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="grid-2">
+                  <label>
+                    Document Type
+                    <select id="document-filter-type" name="documentType">
+                      <option value="">All types</option>
+                    </select>
+                  </label>
+                  <label>
+                    Search
+                    <input
+                      type="search"
+                      id="document-filter-search"
+                      name="search"
+                      placeholder="File name, notes, plate, type"
+                    />
+                  </label>
+                </div>
+                <div class="page-actions">
+                  <p id="document-filter-summary" class="subtitle" style="margin: 0"></p>
+                  <div style="display: inline-flex; gap: 0.5rem">
+                    <label style="font-weight: 500">
+                      Sort
+                      <select id="document-filter-sort" name="sort">
+                        <option value="expiry_asc">Expiry (soonest)</option>
+                        <option value="expiry_desc">Expiry (latest)</option>
+                        <option value="uploaded_desc">Uploaded (newest)</option>
+                        <option value="uploaded_asc">Uploaded (oldest)</option>
+                        <option value="type_asc">Type (A-Z)</option>
+                      </select>
+                    </label>
+                    <button type="button" id="document-filter-reset-btn">Reset</button>
+                  </div>
+                </div>
+              </form>
               <div id="vehicle-document-list" class="table-wrap"></div>
               <div id="document-pagination" class="pagination-wrap hidden"></div>
             </article>
 
             <article class="card">
               <h2>Work Orders</h2>
+              <form id="work-order-filter-form" class="stack" autocomplete="off">
+                <div class="grid-3">
+                  <label>
+                    Search
+                    <input
+                      type="search"
+                      id="work-order-filter-search"
+                      name="search"
+                      placeholder="Title, vendor, plate, notes"
+                    />
+                  </label>
+                  <label>
+                    Status
+                    <select id="work-order-filter-status" name="status">
+                      <option value="">All statuses</option>
+                      <option value="open">open</option>
+                      <option value="in_progress">in_progress</option>
+                      <option value="on_hold">on_hold</option>
+                      <option value="completed">completed</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </label>
+                  <label>
+                    Priority
+                    <select id="work-order-filter-priority" name="priority">
+                      <option value="">All priorities</option>
+                      <option value="critical">critical</option>
+                      <option value="high">high</option>
+                      <option value="medium">medium</option>
+                      <option value="low">low</option>
+                    </select>
+                  </label>
+                  <label>
+                    Vehicle
+                    <select id="work-order-filter-vehicle" name="vehicleId"></select>
+                  </label>
+                  <label>
+                    Sort
+                    <select id="work-order-filter-sort" name="sort">
+                      <option value="scheduled_asc">Scheduled (soonest)</option>
+                      <option value="priority_desc">Priority (critical first)</option>
+                      <option value="updated_desc">Updated (newest)</option>
+                      <option value="created_desc">Created (newest)</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="page-actions">
+                  <p id="work-order-filter-summary" class="subtitle" style="margin: 0"></p>
+                  <button type="button" id="work-order-filter-reset-btn">Reset</button>
+                </div>
+              </form>
               <div id="work-order-list" class="table-wrap"></div>
               <div id="work-order-pagination" class="pagination-wrap hidden"></div>
             </article>
@@ -120,8 +225,8 @@
       </div>
     </div>
 
-    <script src="/legacy-fallback.js?v=20260319"></script>
-    <script src="/common.js?v=20260319"></script>
-    <script src="/maintenance.js?v=20260319"></script>
+    <script src="/common.js?v=20260327"></script>
+    <script src="/maintenance.js?v=20260330"></script>
+    <script src="/ui-fallback.js?v=20260339"></script>
   </body>
 </html>

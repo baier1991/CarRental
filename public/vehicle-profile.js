@@ -1,6 +1,7 @@
 const {
   request,
   showToast,
+  confirmAction,
   formatMoney,
   collectCheckedValues,
   sessionReady,
@@ -96,6 +97,9 @@ function populateVehicleSelect() {
 
 function renderProfileSummary() {
   const container = document.getElementById("vehicle-profile-summary");
+  if (!container) {
+    return;
+  }
   if (!state.profileVehicle) {
     container.innerHTML = "<p>Select a vehicle to see profile details.</p>";
     return;
@@ -136,6 +140,9 @@ function populateEditForm() {
   }
 
   const form = document.getElementById("edit-vehicle-form");
+  if (!form) {
+    return;
+  }
   const fields = [
     "dailyRate",
     "weekendDailyRate",
@@ -169,6 +176,9 @@ function populateEditForm() {
 
 function renderDocumentList() {
   const container = document.getElementById("profile-document-list");
+  if (!container) {
+    return;
+  }
   if (!state.selectedVehicleId) {
     container.innerHTML = "<p>Select a vehicle first.</p>";
     renderPaginationControls("profile-document-pagination", null);
@@ -225,6 +235,9 @@ function renderDocumentList() {
 
 function renderWorkOrderList() {
   const container = document.getElementById("profile-work-order-list");
+  if (!container) {
+    return;
+  }
   if (!state.selectedVehicleId) {
     container.innerHTML = "<p>Select a vehicle first.</p>";
     renderPaginationControls("profile-work-order-pagination", null);
@@ -316,7 +329,8 @@ async function loadProfile(vehicleId) {
 }
 
 async function loadVehicles() {
-  state.vehicles = await request("/api/vehicles");
+  const vehicles = await request("/api/vehicles");
+  state.vehicles = Array.isArray(vehicles) ? vehicles : [];
   populateVehicleSelect();
 }
 
@@ -345,122 +359,155 @@ function attachHandlers() {
   const workOrderForm = document.getElementById("profile-work-order-form");
   const workOrderList = document.getElementById("profile-work-order-list");
 
-  vehicleSelect.addEventListener("change", async () => {
-    await selectVehicle(vehicleSelect.value);
-  });
+  if (vehicleSelect) {
+    vehicleSelect.dataset.handlerBound = "true";
+    vehicleSelect.addEventListener("change", async () => {
+      await selectVehicle(vehicleSelect.value);
+    });
+  }
 
-  editForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!state.canEdit || !state.selectedVehicleId) {
-      showToast("You do not have permission to edit vehicles.", true);
-      return;
-    }
+  if (editForm) {
+    editForm.dataset.handlerBound = "true";
+    editForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!state.canEdit || !state.selectedVehicleId) {
+        showToast("You do not have permission to edit vehicles.", true);
+        return;
+      }
 
-    const payload = Object.fromEntries(new FormData(editForm).entries());
-    payload.features = collectCheckedValues(editForm, "editFeatures");
+      const payload = Object.fromEntries(new FormData(editForm).entries());
+      payload.features = collectCheckedValues(editForm, "editFeatures");
+      if (!confirmAction("Save vehicle changes?")) {
+        return;
+      }
 
-    try {
-      await request(`/api/vehicles/${state.selectedVehicleId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
-      showToast("Vehicle updated.");
-      await loadVehicles();
-      await loadProfile(state.selectedVehicleId);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      try {
+        await request(`/api/vehicles/${state.selectedVehicleId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        showToast("Vehicle updated.");
+        await loadVehicles();
+        await loadProfile(state.selectedVehicleId);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  documentForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!state.canEdit || !state.selectedVehicleId) {
-      showToast("You do not have permission to manage documents.", true);
-      return;
-    }
+  if (documentForm) {
+    documentForm.dataset.handlerBound = "true";
+    documentForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!state.canEdit || !state.selectedVehicleId) {
+        showToast("You do not have permission to manage documents.", true);
+        return;
+      }
 
-    const formData = new FormData(documentForm);
-    try {
-      await request(`/api/vehicles/${state.selectedVehicleId}/documents`, {
-        method: "POST",
-        body: formData,
-      });
-      showToast("Document uploaded.");
-      documentForm.reset();
-      await loadProfile(state.selectedVehicleId);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      const formData = new FormData(documentForm);
+      if (!confirmAction("Upload this vehicle document?")) {
+        return;
+      }
+      try {
+        await request(`/api/vehicles/${state.selectedVehicleId}/documents`, {
+          method: "POST",
+          body: formData,
+        });
+        showToast("Document uploaded.");
+        documentForm.reset();
+        await loadProfile(state.selectedVehicleId);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  documentList.addEventListener("click", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const documentId = target.dataset.documentDeleteId;
-    if (!documentId || !state.selectedVehicleId || !state.canEdit) {
-      return;
-    }
+  if (documentList) {
+    documentList.dataset.handlerBound = "true";
+    documentList.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const documentId = target.dataset.documentDeleteId;
+      if (!documentId || !state.selectedVehicleId || !state.canEdit) {
+        return;
+      }
+      if (!confirmAction("Delete this vehicle document?")) {
+        return;
+      }
 
-    try {
-      await request(`/api/vehicles/${state.selectedVehicleId}/documents/${documentId}`, {
-        method: "DELETE",
-      });
-      showToast("Document deleted.");
-      await loadProfile(state.selectedVehicleId);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      try {
+        await request(`/api/vehicles/${state.selectedVehicleId}/documents/${documentId}`, {
+          method: "DELETE",
+        });
+        showToast("Document deleted.");
+        await loadProfile(state.selectedVehicleId);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  workOrderForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!state.canEdit || !state.selectedVehicleId) {
-      showToast("You do not have permission to manage work orders.", true);
-      return;
-    }
+  if (workOrderForm) {
+    workOrderForm.dataset.handlerBound = "true";
+    workOrderForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!state.canEdit || !state.selectedVehicleId) {
+        showToast("You do not have permission to manage work orders.", true);
+        return;
+      }
 
-    const payload = Object.fromEntries(new FormData(workOrderForm).entries());
-    try {
-      await request(`/api/vehicles/${state.selectedVehicleId}/work-orders`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      showToast("Work order created.");
-      workOrderForm.reset();
-      await loadProfile(state.selectedVehicleId);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      const payload = Object.fromEntries(new FormData(workOrderForm).entries());
+      if (!confirmAction("Create this work order?")) {
+        return;
+      }
+      try {
+        await request(`/api/vehicles/${state.selectedVehicleId}/work-orders`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        showToast("Work order created.");
+        workOrderForm.reset();
+        await loadProfile(state.selectedVehicleId);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  workOrderList.addEventListener("click", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const workOrderId = target.dataset.workOrderSaveId;
-    if (!workOrderId || !state.selectedVehicleId || !state.canEdit) {
-      return;
-    }
+  if (workOrderList) {
+    workOrderList.dataset.handlerBound = "true";
+    workOrderList.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const workOrderId = target.dataset.workOrderSaveId;
+      if (!workOrderId || !state.selectedVehicleId || !state.canEdit) {
+        return;
+      }
 
-    const select = workOrderList.querySelector(`select[data-work-order-status-id="${workOrderId}"]`);
-    if (!(select instanceof HTMLSelectElement)) {
-      return;
-    }
+      const select = workOrderList.querySelector(`select[data-work-order-status-id="${workOrderId}"]`);
+      if (!(select instanceof HTMLSelectElement)) {
+        return;
+      }
+      if (!confirmAction("Save this work order status change?")) {
+        return;
+      }
 
-    try {
-      await request(`/api/work-orders/${workOrderId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: select.value }),
-      });
-      showToast("Work order updated.");
-      await loadProfile(state.selectedVehicleId);
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      try {
+        await request(`/api/work-orders/${workOrderId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: select.value }),
+        });
+        showToast("Work order updated.");
+        await loadProfile(state.selectedVehicleId);
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 }
 
 async function bootstrap() {

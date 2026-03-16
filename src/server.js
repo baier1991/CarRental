@@ -29,6 +29,7 @@ const {
 const { hashPassword, verifyPassword, sanitizeUser, createSessionToken } = require("./domain/auth");
 
 const app = express();
+app.set("etag", false);
 const PORT = Number(process.env.PORT) || 3000;
 
 const RESERVATION_STATUSES = new Set([
@@ -61,7 +62,14 @@ app.use(express.urlencoded({ extended: false }));
 const publicDirectory = path.resolve(__dirname, "../public");
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/") || req.path.startsWith("/uploads/")) {
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    return next();
+  }
+
+  if (req.path.startsWith("/uploads/")) {
     return next();
   }
 
@@ -139,9 +147,42 @@ function parseCookies(cookieHeader = "") {
       }
       const key = pair.slice(0, index).trim();
       const value = pair.slice(index + 1).trim();
-      acc[key] = decodeURIComponent(value);
+      let decodedValue = value;
+      try {
+        decodedValue = decodeURIComponent(value);
+      } catch (_error) {
+        decodedValue = value;
+      }
+      acc[key] = decodedValue;
       return acc;
     }, {});
+}
+
+function normalizeNextPath(rawNextPath) {
+  const nextPath = String(rawNextPath || "").trim();
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return "/";
+  }
+  if (
+    nextPath === "/login" ||
+    nextPath === "/login/" ||
+    nextPath.startsWith("/login.html") ||
+    nextPath.startsWith("/login?")
+  ) {
+    return "/";
+  }
+  if (nextPath.startsWith("/api/")) {
+    return "/";
+  }
+  return nextPath || "/";
+}
+
+function buildLoginRedirectUrl(nextPath) {
+  const normalizedNextPath = normalizeNextPath(nextPath);
+  if (normalizedNextPath === "/" || normalizedNextPath === "/index.html") {
+    return "/login.html";
+  }
+  return `/login.html?next=${encodeURIComponent(normalizedNextPath)}`;
 }
 
 function getSessionTokenFromRequest(req) {
@@ -394,6 +435,21 @@ function reseedTenantOperationalData(store, tenant) {
   };
 }
 
+function ensureTenantOperationalData(store, tenant) {
+  const tenantId = tenant.id;
+  const hasOperationalData =
+    store.vehicles.some((item) => item.tenantId === tenantId) ||
+    store.customers.some((item) => item.tenantId === tenantId) ||
+    store.reservations.some((item) => item.tenantId === tenantId) ||
+    store.workOrders.some((item) => item.tenantId === tenantId) ||
+    store.vehicleDocuments.some((item) => item.tenantId === tenantId);
+
+  if (hasOperationalData) {
+    return { applied: false, reason: "Tenant already has operational data." };
+  }
+  return reseedTenantOperationalData(store, tenant);
+}
+
 function authenticateTenantUser(store, { tenantSlug, email, password }) {
   const normalizedTenantSlug = String(tenantSlug || "")
     .trim()
@@ -441,16 +497,10 @@ function createSessionForUser(store, user, tenant) {
 }
 
 app.get("/login.html", (req, res) => {
-  const { tenantSlug, email, password } = req.query || {};
-  if (tenantSlug && email && password) {
-    const store = readStore();
-    const auth = authenticateTenantUser(store, { tenantSlug, email, password });
-    if (auth) {
-      const token = createSessionForUser(store, auth.user, auth.tenant);
-      setSessionCookie(res, token);
-      return res.redirect("/index.html");
-    }
-    return res.redirect("/login.html?error=invalid_credentials");
+  const store = readStore();
+  const authContext = resolveAuthContext(store, req);
+  if (authContext) {
+    return res.redirect(normalizeNextPath(req.query?.next));
   }
 
   return res.sendFile(path.resolve(publicDirectory, "login.html"));
@@ -461,20 +511,24 @@ app.get("/login", (_req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { tenantSlug, email, password } = req.body || {};
+  const { tenantSlug, email, password, next } = req.body || {};
+  const nextPath = normalizeNextPath(next || req.query?.next);
   if (!tenantSlug || !email || !password) {
-    return res.redirect("/login.html?error=missing_fields");
+    const nextQuery = nextPath !== "/" ? `&next=${encodeURIComponent(nextPath)}` : "";
+    return res.redirect(`/login.html?error=missing_fields${nextQuery}`);
   }
 
   const store = readStore();
   const auth = authenticateTenantUser(store, { tenantSlug, email, password });
   if (!auth) {
-    return res.redirect("/login.html?error=invalid_credentials");
+    const nextQuery = nextPath !== "/" ? `&next=${encodeURIComponent(nextPath)}` : "";
+    return res.redirect(`/login.html?error=invalid_credentials${nextQuery}`);
   }
 
+  ensureTenantOperationalData(store, auth.tenant);
   const token = createSessionForUser(store, auth.user, auth.tenant);
   setSessionCookie(res, token);
-  return res.redirect("/index.html");
+  return res.redirect(nextPath);
 });
 
 app.get(["/home", "/dashboard"], (_req, res) => {
@@ -485,7 +539,7 @@ app.get(PROTECTED_PAGE_PATHS, (req, res, next) => {
   const store = readStore();
   const authContext = resolveAuthContext(store, req);
   if (!authContext) {
-    return res.redirect("/login.html");
+    return res.redirect(buildLoginRedirectUrl(req.originalUrl || req.path));
   }
 
   const requestedPath = req.path === "/" ? "/index.html" : req.path;
@@ -511,7 +565,7 @@ app.use((req, res, next) => {
   const store = readStore();
   const authContext = resolveAuthContext(store, req);
   if (!authContext) {
-    return res.redirect("/login.html");
+    return res.redirect(buildLoginRedirectUrl(req.originalUrl || req.path));
   }
 
   return res.sendFile(path.resolve(publicDirectory, "index.html"));
@@ -600,6 +654,7 @@ app.post("/api/auth/login", (req, res) => {
     return res.status(401).json({ error: "Invalid tenant credentials." });
   }
   const { tenant, user } = auth;
+  ensureTenantOperationalData(store, tenant);
   const token = createSessionForUser(store, user, tenant);
   setSessionCookie(res, token);
 
@@ -621,6 +676,7 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
 });
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
+  ensureTenantOperationalData(req.store, req.auth.tenant);
   return res.json({
     user: sanitizeUser(req.auth.user),
     tenant: {
@@ -1072,6 +1128,43 @@ app.patch(
   }
 );
 
+app.get("/api/vehicle-documents", requireAuth, (req, res) => {
+  const store = req.store;
+  const vehicleIdFilter = req.query.vehicleId ? String(req.query.vehicleId).trim() : null;
+  const documentTypeRaw = req.query.documentType ? String(req.query.documentType).trim() : null;
+
+  let documentTypeFilter = null;
+  if (documentTypeRaw) {
+    documentTypeFilter = normalizeDocumentType(documentTypeRaw);
+    if (!documentTypeFilter) {
+      return sendValidationError(res, "Invalid documentType filter.");
+    }
+  }
+
+  if (vehicleIdFilter) {
+    const vehicle = store.vehicles.find(
+      (item) => item.id === vehicleIdFilter && item.tenantId === req.tenantId
+    );
+    if (!vehicle) {
+      return res.status(404).json({ error: "Vehicle not found." });
+    }
+  }
+
+  const documents = forTenant(store.vehicleDocuments, req.tenantId)
+    .filter((document) => {
+      if (vehicleIdFilter && document.vehicleId !== vehicleIdFilter) {
+        return false;
+      }
+      if (documentTypeFilter && document.documentType !== documentTypeFilter) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+  return res.json(documents);
+});
+
 app.get("/api/vehicles/:vehicleId/documents", requireAuth, (req, res) => {
   const store = req.store;
   const vehicle = store.vehicles.find(
@@ -1494,4 +1587,6 @@ if (require.main === module) {
 module.exports = {
   app,
   calculateDashboard,
+  normalizeNextPath,
+  buildLoginRedirectUrl,
 };
