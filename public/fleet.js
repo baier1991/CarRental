@@ -32,6 +32,8 @@ const state = {
   vehiclePageSize: 8,
   filters: { ...DEFAULT_FILTERS },
   searchDebounceTimer: null,
+  hasRateParamsFromUrl: false,
+  initialRateDefaultsApplied: false,
 };
 
 function canEditVehicles() {
@@ -394,12 +396,29 @@ function renderFleetPage() {
   syncFiltersToUrl();
 }
 
+function enforceInitialRateDefaults() {
+  if (state.initialRateDefaultsApplied) {
+    return;
+  }
+  state.initialRateDefaultsApplied = true;
+  if (state.hasRateParamsFromUrl) {
+    return;
+  }
+  if (!state.filters.minRate && !state.filters.maxRate) {
+    return;
+  }
+  state.filters.minRate = "";
+  state.filters.maxRate = "";
+  syncFilterFormFromState();
+}
+
 async function loadFleetData() {
   const vehicles = await request("/api/vehicles");
   state.allVehicles = Array.isArray(vehicles) ? vehicles.map((vehicle) => normalizeVehicleForFiltering(vehicle)) : [];
   populateCategoryFilter();
   populateBranchFilter();
   syncFilterFormFromState();
+  enforceInitialRateDefaults();
   renderFleetPage();
 }
 
@@ -455,6 +474,7 @@ function initializeFiltersFromUrl() {
   state.filters.branch = params.get("branch") || DEFAULT_FILTERS.branch;
   state.filters.minRate = normalizeRateFilterValue(params.get("minRate"));
   state.filters.maxRate = normalizeRateFilterValue(params.get("maxRate"));
+  state.hasRateParamsFromUrl = params.has("minRate") || params.has("maxRate");
   const sort = params.get("sort") || DEFAULT_FILTERS.sort;
   state.filters.sort = SORT_OPTIONS.has(sort) ? sort : DEFAULT_FILTERS.sort;
 

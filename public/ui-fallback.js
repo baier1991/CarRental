@@ -164,6 +164,23 @@
     };
   }
 
+  function clearFleetFallbackRateInputsIfNoUrlParams() {
+    var params = new URLSearchParams(window.location.search || "");
+    if (params.has("minRate") || params.has("maxRate")) {
+      return;
+    }
+    var form = document.getElementById("fleet-filter-form");
+    if (!form) {
+      return;
+    }
+    if (form.elements.minRate && form.elements.minRate.value) {
+      form.elements.minRate.value = "";
+    }
+    if (form.elements.maxRate && form.elements.maxRate.value) {
+      form.elements.maxRate.value = "";
+    }
+  }
+
   function filterFleetVehicles(normalizedVehicles, filters) {
     var effectiveRateFilters = getFleetEffectiveRateFilters(normalizedVehicles, filters);
     var minRate = effectiveRateFilters.minRate;
@@ -419,6 +436,7 @@
   }
 
   function renderFleetFallback(vehicles) {
+    clearFleetFallbackRateInputsIfNoUrlParams();
     var normalizedVehicles = normalizeFleetVehicles(vehicles);
     var filters = getFleetFiltersFromForm();
     var rateFilters = getFleetEffectiveRateFilters(normalizedVehicles, filters);
@@ -506,6 +524,7 @@
   }
 
   function bindFleetFallbackFiltering(vehicles) {
+    clearFleetFallbackRateInputsIfNoUrlParams();
     var normalizedVehicles = normalizeFleetVehicles(vehicles);
     var filterForm = document.getElementById("fleet-filter-form");
     var resetButton = document.getElementById("fleet-filter-reset-btn");
