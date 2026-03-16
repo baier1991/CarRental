@@ -1,6 +1,6 @@
 {
   "meta": {
-    "demoDataVersion": "2026-03-16-demo-expanded-1"
+    "demoDataVersion": "2026-03-16-demo-expanded-2"
   },
   "tenants": [
     {
@@ -549,7 +549,83 @@
       "updatedAt": "2026-03-08T11:00:00.000Z"
     }
   ],
-  "vehicleDocuments": [],
+  "vehicleDocuments": [
+    {
+      "id": "doc-ac-001",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-001",
+      "documentType": "registration",
+      "originalName": "acme-dxb-2101-registration.pdf",
+      "fileName": "acme-dxb-2101-registration.pdf",
+      "mimeType": "application/pdf",
+      "size": 182440,
+      "relativePath": "/uploads/vehicle-documents/acme-dxb-2101-registration.pdf",
+      "expiryDate": "2026-09-05",
+      "notes": "Road and transport authority registration card.",
+      "uploadedAt": "2026-03-02T09:00:00.000Z",
+      "uploadedBy": "seed-system"
+    },
+    {
+      "id": "doc-ac-002",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-003",
+      "documentType": "insurance",
+      "originalName": "acme-dxb-7714-insurance.pdf",
+      "fileName": "acme-dxb-7714-insurance.pdf",
+      "mimeType": "application/pdf",
+      "size": 205331,
+      "relativePath": "/uploads/vehicle-documents/acme-dxb-7714-insurance.pdf",
+      "expiryDate": "2026-06-10",
+      "notes": "Needs renewal in current quarter.",
+      "uploadedAt": "2026-03-03T08:20:00.000Z",
+      "uploadedBy": "seed-system"
+    },
+    {
+      "id": "doc-ac-003",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-004",
+      "documentType": "inspection",
+      "originalName": "acme-dxb-9982-inspection.pdf",
+      "fileName": "acme-dxb-9982-inspection.pdf",
+      "mimeType": "application/pdf",
+      "size": 143919,
+      "relativePath": "/uploads/vehicle-documents/acme-dxb-9982-inspection.pdf",
+      "expiryDate": "2026-12-15",
+      "notes": "EV annual compliance report.",
+      "uploadedAt": "2026-03-05T14:05:00.000Z",
+      "uploadedBy": "seed-system"
+    },
+    {
+      "id": "doc-hz-001",
+      "tenantId": "tenant-horizon",
+      "vehicleId": "veh-hz-001",
+      "documentType": "registration",
+      "originalName": "horizon-shj-5521-registration.pdf",
+      "fileName": "horizon-shj-5521-registration.pdf",
+      "mimeType": "application/pdf",
+      "size": 162702,
+      "relativePath": "/uploads/vehicle-documents/horizon-shj-5521-registration.pdf",
+      "expiryDate": "2026-07-15",
+      "notes": "Renew before peak season.",
+      "uploadedAt": "2026-03-01T11:30:00.000Z",
+      "uploadedBy": "seed-system"
+    },
+    {
+      "id": "doc-hz-002",
+      "tenantId": "tenant-horizon",
+      "vehicleId": "veh-hz-003",
+      "documentType": "insurance",
+      "originalName": "horizon-shj-9042-insurance.pdf",
+      "fileName": "horizon-shj-9042-insurance.pdf",
+      "mimeType": "application/pdf",
+      "size": 197441,
+      "relativePath": "/uploads/vehicle-documents/horizon-shj-9042-insurance.pdf",
+      "expiryDate": "2026-05-02",
+      "notes": "Pending new insurer quote.",
+      "uploadedAt": "2026-03-04T10:45:00.000Z",
+      "uploadedBy": "seed-system"
+    }
+  ],
   "workOrders": [
     {
       "id": "wo-ac-001",

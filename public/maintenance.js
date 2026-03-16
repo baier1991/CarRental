@@ -2,7 +2,6 @@ const {
   request,
   showToast,
   confirmAction,
-  vehicleLabel,
   formatMoney,
   sessionReady,
   markPageReady,
@@ -89,6 +88,13 @@ function daysUntil(dateOnly) {
 
 function getVehicleMap() {
   return new Map(state.vehicles.map((vehicle) => [vehicle.id, vehicle]));
+}
+
+function vehicleOptionLabel(vehicle) {
+  if (!vehicle) {
+    return "Unknown vehicle";
+  }
+  return `${vehicle.plateNumber || "n/a"} - ${vehicle.make || ""} ${vehicle.model || ""}`.trim();
 }
 
 function getVehicleShortLabel(vehicleId) {
@@ -342,11 +348,14 @@ function populateVehicleSelects() {
       select.value = "";
       return;
     }
-    select.innerHTML = state.vehicles
-      .map((vehicle) => `<option value="${vehicle.id}">${escapeHtml(vehicleLabel(vehicle))}</option>`)
-      .join("");
+    select.innerHTML = [
+      '<option value="">Select vehicle</option>',
+      ...state.vehicles.map((vehicle) => `<option value="${vehicle.id}">${escapeHtml(vehicleOptionLabel(vehicle))}</option>`),
+    ].join("");
     if (previousValue && state.vehicles.some((vehicle) => vehicle.id === previousValue)) {
       select.value = previousValue;
+    } else if (state.vehicles[0]) {
+      select.value = state.vehicles[0].id;
     }
   });
 
@@ -360,7 +369,7 @@ function populateVehicleSelects() {
     }
     const options = [
       `<option value="">${allLabel}</option>`,
-      ...state.vehicles.map((vehicle) => `<option value="${vehicle.id}">${escapeHtml(vehicleLabel(vehicle))}</option>`),
+      ...state.vehicles.map((vehicle) => `<option value="${vehicle.id}">${escapeHtml(vehicleOptionLabel(vehicle))}</option>`),
     ];
     select.innerHTML = options.join("");
     const preferredValue = select.id === "document-list-vehicle-select"
@@ -371,6 +380,36 @@ function populateVehicleSelects() {
       select.value = nextValue;
     }
   });
+}
+
+function ensureVehicleDropdownsHealthy() {
+  if (!state.vehicles.length) {
+    return;
+  }
+  const selectIds = [
+    "document-vehicle-select",
+    "work-order-vehicle",
+    "document-list-vehicle-select",
+    "work-order-filter-vehicle",
+  ];
+  const hasBroken = selectIds.some((id) => {
+    const select = document.getElementById(id);
+    if (!(select instanceof HTMLSelectElement)) {
+      return false;
+    }
+    if (select.options.length === 0) {
+      return true;
+    }
+    if (select.options.length === 1 && String(select.options[0].value || "").trim() === "") {
+      return true;
+    }
+    return false;
+  });
+  if (hasBroken) {
+    populateVehicleSelects();
+    syncDocumentFilterFormFromState();
+    syncWorkOrderFilterFormFromState();
+  }
 }
 
 function populateDocumentTypeFilter() {
@@ -1065,6 +1104,17 @@ function attachHandlers() {
       applyWorkOrderFilters({ resetPage: true });
     });
   }
+
+  document.addEventListener("focusin", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (!target.matches("#document-vehicle-select, #work-order-vehicle, #document-list-vehicle-select, #work-order-filter-vehicle")) {
+      return;
+    }
+    ensureVehicleDropdownsHealthy();
+  });
 }
 
 async function bootstrap() {
@@ -1072,6 +1122,7 @@ async function bootstrap() {
     state.session = await sessionReady;
     attachHandlers();
     await loadMaintenanceData();
+    window.setTimeout(() => ensureVehicleDropdownsHealthy(), 200);
     markPageReady("maintenance");
   } catch (error) {
     showToast(error.message, true);

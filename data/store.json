@@ -1,6 +1,6 @@
 {
   "meta": {
-    "demoDataVersion": "2026-03-15-demo-reset-2"
+    "demoDataVersion": "2026-03-16-demo-expanded-2"
   },
   "tenants": [
     {
@@ -258,7 +258,53 @@
       "updatedAt": "2026-03-05T08:00:00.000Z"
     }
   ],
-  "vehicleDocuments": [],
+  "vehicleDocuments": [
+    {
+      "id": "doc-ac-001",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-001",
+      "documentType": "registration",
+      "originalName": "acme-dxb-2101-registration.pdf",
+      "fileName": "acme-dxb-2101-registration.pdf",
+      "mimeType": "application/pdf",
+      "size": 182440,
+      "relativePath": "/uploads/vehicle-documents/acme-dxb-2101-registration.pdf",
+      "expiryDate": "2026-09-05",
+      "notes": "Road and transport authority registration card.",
+      "uploadedAt": "2026-03-02T09:00:00.000Z",
+      "uploadedBy": "seed-system"
+    },
+    {
+      "id": "doc-ac-002",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-002",
+      "documentType": "insurance",
+      "originalName": "acme-dxb-4820-insurance.pdf",
+      "fileName": "acme-dxb-4820-insurance.pdf",
+      "mimeType": "application/pdf",
+      "size": 205331,
+      "relativePath": "/uploads/vehicle-documents/acme-dxb-4820-insurance.pdf",
+      "expiryDate": "2026-09-15",
+      "notes": "Policy synced from broker portal.",
+      "uploadedAt": "2026-03-03T08:20:00.000Z",
+      "uploadedBy": "seed-system"
+    },
+    {
+      "id": "doc-hz-001",
+      "tenantId": "tenant-horizon",
+      "vehicleId": "veh-hz-001",
+      "documentType": "registration",
+      "originalName": "horizon-shj-5521-registration.pdf",
+      "fileName": "horizon-shj-5521-registration.pdf",
+      "mimeType": "application/pdf",
+      "size": 162702,
+      "relativePath": "/uploads/vehicle-documents/horizon-shj-5521-registration.pdf",
+      "expiryDate": "2026-07-15",
+      "notes": "Renew before peak season.",
+      "uploadedAt": "2026-03-01T11:30:00.000Z",
+      "uploadedBy": "seed-system"
+    }
+  ],
   "workOrders": [
     {
       "id": "wo-ac-001",
@@ -295,6 +341,42 @@
       "createdAt": "2026-03-06T07:00:00.000Z",
       "updatedAt": "2026-03-06T07:00:00.000Z",
       "completedAt": null
+    },
+    {
+      "id": "wo-ac-002",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-001",
+      "title": "Brake pads replacement",
+      "description": "Front brake pads and fluid top-up.",
+      "priority": "high",
+      "status": "in_progress",
+      "scheduledDate": "2026-03-19",
+      "odometerKm": 22480,
+      "costEstimate": 260,
+      "actualCost": null,
+      "vendorName": "Downtown Auto Electric",
+      "notes": "Road test pending.",
+      "createdAt": "2026-03-08T08:30:00.000Z",
+      "updatedAt": "2026-03-11T15:20:00.000Z",
+      "completedAt": null
+    },
+    {
+      "id": "wo-ac-003",
+      "tenantId": "tenant-acme",
+      "vehicleId": "veh-ac-002",
+      "title": "AC compressor check",
+      "description": "Cabin cooling weak at idle.",
+      "priority": "medium",
+      "status": "completed",
+      "scheduledDate": "2026-03-10",
+      "odometerKm": 17300,
+      "costEstimate": 180,
+      "actualCost": 165,
+      "vendorName": "Dubai Quick Service",
+      "notes": "Filter replaced.",
+      "createdAt": "2026-03-10T09:00:00.000Z",
+      "updatedAt": "2026-03-12T11:20:00.000Z",
+      "completedAt": "2026-03-12T11:20:00.000Z"
     }
   ]
 }
