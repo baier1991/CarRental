@@ -22,6 +22,9 @@ function setFormMessage(message, isError = false) {
 
 function renderCustomerList() {
   const container = document.getElementById("customer-list");
+  if (!container) {
+    return;
+  }
   if (state.customers.length === 0) {
     container.innerHTML = "<p>No customers yet.</p>";
     renderPaginationControls("customer-pagination", null);
@@ -70,13 +73,17 @@ function renderCustomerList() {
 }
 
 function renderMetrics() {
+  const metricsContainer = document.getElementById("customer-metrics");
+  if (!metricsContainer) {
+    return;
+  }
   const activeCustomerIds = new Set(state.reservations.map((reservation) => reservation.customerId));
   const metrics = [
     { label: "Total Customers", value: state.customers.length },
     { label: "Customers with Reservations", value: activeCustomerIds.size },
   ];
 
-  document.getElementById("customer-metrics").innerHTML = metrics
+  metricsContainer.innerHTML = metrics
     .map(
       (metric) => `
       <div class="metric">
@@ -106,6 +113,9 @@ async function loadCustomers() {
 
 function attachHandlers() {
   const form = document.getElementById("customer-form");
+  if (!form) {
+    return;
+  }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(form).entries());

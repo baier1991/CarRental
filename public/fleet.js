@@ -60,6 +60,11 @@ function getFilteredVehicles() {
 }
 
 function renderFleetOverview() {
+  const metricsContainer = document.getElementById("fleet-overview-metrics");
+  if (!metricsContainer) {
+    return;
+  }
+
   const vehicles = state.filteredVehicles;
   const total = vehicles.length;
   const available = vehicles.filter((item) => item.status === "available").length;
@@ -80,7 +85,7 @@ function renderFleetOverview() {
     { label: "Avg Daily Rate", value: formatMoney(avgDailyRate) },
   ];
 
-  document.getElementById("fleet-overview-metrics").innerHTML = metrics
+  metricsContainer.innerHTML = metrics
     .map(
       (metric) => `
       <div class="metric">
@@ -94,6 +99,9 @@ function renderFleetOverview() {
 
 function renderVehicleList() {
   const container = document.getElementById("vehicle-list");
+  if (!container) {
+    return;
+  }
   if (state.filteredVehicles.length === 0) {
     container.innerHTML = "<p>No vehicles yet.</p>";
     renderPaginationControls("vehicle-pagination", null);
@@ -147,6 +155,9 @@ function renderVehicleList() {
 
 function populateCategoryFilter() {
   const categorySelect = document.getElementById("fleet-filter-category");
+  if (!categorySelect) {
+    return;
+  }
   const existing = String(categorySelect.value || "");
   const categories = Array.from(
     new Set(
@@ -187,6 +198,9 @@ function applyFilterFormValues(formData) {
 function updateAddPanelVisibility() {
   const addPanel = document.getElementById("fleet-add-panel");
   const addButton = document.getElementById("fleet-add-toggle-btn");
+  if (!addPanel || !addButton) {
+    return;
+  }
   const visible = !addPanel.classList.contains("hidden");
   addButton.textContent = visible ? "Close Add Vehicle" : "+ Add Vehicle";
 }
@@ -240,62 +254,70 @@ function attachHandlers() {
   const filterForm = document.getElementById("fleet-filter-form");
   const resetFiltersButton = document.getElementById("fleet-filter-reset-btn");
 
-  addToggleButton.addEventListener("click", () => {
-    if (!canEditVehicles()) {
-      showToast("You do not have permission to add vehicles.", true);
-      return;
-    }
-    toggleAddPanel();
-  });
+  if (addToggleButton) {
+    addToggleButton.addEventListener("click", () => {
+      if (!canEditVehicles()) {
+        showToast("You do not have permission to add vehicles.", true);
+        return;
+      }
+      toggleAddPanel();
+    });
+  }
 
-  addForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!canEditVehicles()) {
-      showToast("You do not have permission to add vehicles.", true);
-      return;
-    }
+  if (addForm) {
+    addForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!canEditVehicles()) {
+        showToast("You do not have permission to add vehicles.", true);
+        return;
+      }
 
-    const payload = Object.fromEntries(new FormData(addForm).entries());
-    payload.features = collectCheckedValues(addForm, "features");
+      const payload = Object.fromEntries(new FormData(addForm).entries());
+      payload.features = collectCheckedValues(addForm, "features");
 
-    try {
-      await request("/api/vehicles", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      showToast("Vehicle added.");
-      addForm.reset();
-      toggleAddPanel(false);
-      await loadFleetData();
-    } catch (error) {
-      showToast(error.message, true);
-    }
-  });
+      try {
+        await request("/api/vehicles", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        showToast("Vehicle added.");
+        addForm.reset();
+        toggleAddPanel(false);
+        await loadFleetData();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  }
 
-  filterForm.addEventListener("input", () => {
-    const formData = new FormData(filterForm);
-    applyFilterFormValues(formData);
-    state.vehiclePage = 1;
-    renderFleetPage();
-  });
+  if (filterForm) {
+    filterForm.addEventListener("input", () => {
+      const formData = new FormData(filterForm);
+      applyFilterFormValues(formData);
+      state.vehiclePage = 1;
+      renderFleetPage();
+    });
 
-  filterForm.addEventListener("change", () => {
-    const formData = new FormData(filterForm);
-    applyFilterFormValues(formData);
-    state.vehiclePage = 1;
-    renderFleetPage();
-  });
+    filterForm.addEventListener("change", () => {
+      const formData = new FormData(filterForm);
+      applyFilterFormValues(formData);
+      state.vehiclePage = 1;
+      renderFleetPage();
+    });
+  }
 
-  resetFiltersButton.addEventListener("click", () => {
-    filterForm.reset();
-    state.filters = {
-      search: "",
-      status: "",
-      category: "",
-    };
-    state.vehiclePage = 1;
-    renderFleetPage();
-  });
+  if (resetFiltersButton && filterForm) {
+    resetFiltersButton.addEventListener("click", () => {
+      filterForm.reset();
+      state.filters = {
+        search: "",
+        status: "",
+        category: "",
+      };
+      state.vehiclePage = 1;
+      renderFleetPage();
+    });
+  }
 }
 
 async function bootstrap() {
